@@ -1,4 +1,3 @@
-
 // NOTE: This file is copied from k8s.io/apiserver/pkg/endpoints/request.
 // We expanded requestInfo.
 
@@ -115,6 +114,7 @@ func (r *RequestInfoFactory) NewRequestInfo(req *http.Request) (*RequestInfo, er
 		},
 		Workspace: api.WorkspaceNone,
 		Cluster:   api.ClusterNone,
+		Region:    api.RegionNone,
 		SourceIP:  iputil.RemoteIp(req),
 		UserAgent: req.UserAgent(),
 	}
