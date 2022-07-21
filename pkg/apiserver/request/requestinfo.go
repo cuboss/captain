@@ -53,6 +53,9 @@ type RequestInfo struct {
 	// Workspace of requested resource, for non-workspaced resources, this may be empty
 	Workspace string
 
+	// Region of requested resource, this is empty in single-cluster environment
+	Region string
+
 	// Cluster of requested resource, this is empty in single-cluster environment
 	Cluster string
 
@@ -142,7 +145,15 @@ func (r *RequestInfoFactory) NewRequestInfo(req *http.Request) (*RequestInfo, er
 	requestInfo.APIPrefix = currentParts[0]
 	currentParts = currentParts[1:]
 
-	// URL forms: /clusters/{cluster}/*
+	// URL forms: /regions/{region}/clusters/{cluster}/*
+	if currentParts[0] == "regions" {
+		if len(currentParts) > 1 {
+			requestInfo.Region = currentParts[1]
+		}
+		if len(currentParts) > 2 {
+			currentParts = currentParts[2:]
+		}
+	}
 	if currentParts[0] == "clusters" {
 		if len(currentParts) > 1 {
 			requestInfo.Cluster = currentParts[1]
