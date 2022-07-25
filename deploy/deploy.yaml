@@ -1,14 +1,75 @@
-# ClusterRole
-TODO
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: captain-apiserver
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: captain-apiserver
+  namespace: captain-system
+
+
 ---
 
-# ClusterRoleBinding
-TODO
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: captain-apiserver
+  namespace: captain-system
+
 ---
 
 # Deployment
-TODO
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: captain-apiserver
+  name: captain-apiserver
+  namespace: captain-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: captain-apiserver
+  template:
+    metadata:
+      labels:
+        app: captain-apiserver
+    spec:
+      containers:
+      - image: DOCKER_REGISTRY/cuboss/captain-server:v0.1.0
+        name: captain-apiserver
+        ports:
+        - containerPort: 9090
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+      serviceAccountName: captain-apiserver
+
 ---
 
 # Service
-TODO
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: captain-apiserver
+  name: captain-apiserver
+  namespace: captain-system
+spec:
+  ports:
+  - name: http
+    port: 9090
+    targetPort: http
+  selector:
+    app: captain-apiserver

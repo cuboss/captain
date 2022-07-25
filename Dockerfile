@@ -4,4 +4,4 @@ ADD bin/captain-apiserver /opt/captain/bin/captain-apiserver
 
 WORKDIR /opt/captain
 
-CMD ["/bin/sh"]
+ENTRYPOINT [ "/opt/captain/bin/captain-apiserver" ]
