@@ -1,10 +1,13 @@
 # captain
-This project aims to buillding a platform which has rich function of managing k8s clusters in everywhere network would be reach. 
+
+This project aims to buillding a platform which has rich function of managing k8s clusters in everywhere network would be reach.
 
 ## quick-start
 
 ### 编译
+
 进入主目录
+
 ```shell
 make captain-server
 ```
@@ -14,7 +17,14 @@ make captain-server
 ```
 ./bin/captain-server
 ```
+
 会连接本地集群 或者指定kubeconfig
+
+### 编译镜像
+
+```shell
+make image
+```
 
 ### 请求
 
