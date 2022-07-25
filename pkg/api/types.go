@@ -1,5 +1,3 @@
-
-
 package api
 
 import (
@@ -161,4 +159,5 @@ const (
 
 	WorkspaceNone = ""
 	ClusterNone   = ""
+	RegionNone    = ""
 )
