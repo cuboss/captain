@@ -10,7 +10,7 @@ const (
 	ApiRootPath = "/capis"
 )
 
-// container holds all webservice of captain-server
+// container holds all webservice of apiserver
 var Container = restful.NewContainer()
 
 type ContainerBuilder []func(c *restful.Container) error

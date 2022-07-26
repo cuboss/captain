@@ -14,7 +14,7 @@ import (
 
 func WithRequestInfo(handler http.Handler, resolver request.RequestInfoResolver) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// Captain supports kube-captain-server proxy requests in multicluster mode. But kube-captain-server
+		// Captain supports kube-apiserver proxy requests in multicluster mode. But kube-apiserver
 		// stripped all authorization headers. Use custom header to carry token to avoid losing authentication token.
 		// We may need a better way. See issue below.
 		// https://github.com/kubernetes/kubernetes/issues/38775#issuecomment-277915961
@@ -28,14 +28,14 @@ func WithRequestInfo(handler http.Handler, resolver request.RequestInfoResolver)
 		}
 
 		// kube-captain-server proxy rejects all proxy requests with dryRun, we had on choice but to
-		// replace it with 'dryrun' before proxy and convert it back before send it to kube-captain-server
+		// replace it with 'dryrun' before proxy and convert it back before send it to kube-apiserver
 		// https://github.com/kubernetes/kubernetes/pull/66083
 		// See pkg/server/dispatch/dispatch.go for more details
 		if len(req.URL.Query()["dryrun"]) != 0 {
 			req.URL.RawQuery = strings.Replace(req.URL.RawQuery, "dryrun", "dryRun", 1)
 		}
 
-		// kube-captain-server lost query string when proxy websocket requests, there are several issues opened
+		// kube-apiserver lost query string when proxy websocket requests, there are several issues opened
 		// tracking this, like https://github.com/kubernetes/kubernetes/issues/89360. Also there is a promising
 		// PR aim to fix this, but it's unlikely it will get merged soon. So here we are again. Put raw query
 		// string in Header and extract it on member cluster.

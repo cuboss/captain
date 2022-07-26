@@ -17,7 +17,7 @@ type KubernetesOptions struct {
 	// in cluster way to create clientset
 	KubeConfig string `json:"kubeconfig" yaml:"kubeconfig"`
 
-	// kubernetes captain-server public address, used to generate kubeconfig
+	// kubernetes apiserver public address, used to generate kubeconfig
 	// for downloading, default to host defined in kubeconfig
 	// +optional
 	Master string `json:"master,omitempty" yaml:"master,omitempty"`
