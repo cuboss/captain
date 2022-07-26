@@ -3,18 +3,14 @@ package config
 
 import (
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"io/ioutil"
 	"os"
 	"testing"
 
-
-	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 
-
-
 	"captain/pkg/simple/client/cache"
-
 )
 
 func newTestConfig() (*Config, error) {
@@ -64,14 +60,14 @@ func TestGet(t *testing.T) {
 	saveTestConfig(t, conf)
 	defer cleanTestConfig(t)
 
-	conf.RedisOptions.Password = "P@88w0rd"
-	os.Setenv("KUBESPHERE_REDIS_PASSWORD", "P@88w0rd")
+	conf.RedisOptions.Password = "Acd13G"
+	os.Setenv("Captain_REDIS_PASSWORD", "Acd13G")
 
 	conf2, err := TryLoadFromDisk()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(conf, conf2); diff != "" {
+	if diff := cmp.Diff(conf.RedisOptions, conf2.RedisOptions); diff != "" {
 		t.Fatal(diff)
 	}
 }
