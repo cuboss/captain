@@ -1,4 +1,4 @@
-// NOTE: This file is copied from k8s.io/apiserver/pkg/endpoints/request.
+// NOTE: This file is copied from k8s.io/captain-server/pkg/endpoints/request.
 // We expanded requestInfo.
 
 package request
@@ -42,7 +42,7 @@ var namespaceSubresources = sets.NewString("status", "finalize")
 var kubernetesAPIPrefixes = sets.NewString("api", "apis")
 
 // RequestInfo holds information parsed from the http.Request,
-// extended from k8s.io/apiserver/pkg/endpoints/request/requestinfo.go
+// extended from k8s.io/captain-server/pkg/endpoints/request/requestinfo.go
 type RequestInfo struct {
 	*k8srequest.RequestInfo
 

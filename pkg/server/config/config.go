@@ -107,7 +107,7 @@ func defaultConfig() *config {
 	}
 }
 
-// Config defines everything needed for apiserver to deal with external services
+// Config defines everything needed for captain-server to deal with external services
 type Config struct {
 	KubernetesOptions     *k8s.KubernetesOptions  `json:"kubernetes,omitempty" yaml:"kubernetes,omitempty" mapstructure:"kubernetes"`
 	RedisOptions          *cache.Options          `json:"redis,omitempty" yaml:"redis,omitempty" mapstructure:"redis"`

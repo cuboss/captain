@@ -7,32 +7,32 @@ const (
 
 	KubeSystemNamespace           = "kube-system"
 	OpenPitrixNamespace           = "openpitrix-system"
-	KubesphereDevOpsNamespace     = "kubesphere-devops-system"
+	CaptainDevOpsNamespace     = "captain-devops-system"
 	IstioNamespace                = "istio-system"
-	KubeSphereMonitoringNamespace = "kubesphere-monitoring-system"
-	KubeSphereLoggingNamespace    = "kubesphere-logging-system"
-	KubeSphereNamespace           = "kubesphere-system"
-	KubeSphereControlNamespace    = "kubesphere-controls-system"
+	CaptainMonitoringNamespace = "Captain-monitoring-system"
+	CaptainLoggingNamespace    = "Captain-logging-system"
+	CaptainNamespace           = "Captain-system"
+	CaptainControlNamespace    = "Captain-controls-system"
 	PorterNamespace               = "porter-system"
-	IngressControllerNamespace    = KubeSphereControlNamespace
+	IngressControllerNamespace    = CaptainControlNamespace
 	AdminUserName                 = "admin"
-	IngressControllerPrefix       = "kubesphere-router-"
-	KubeSphereConfigName          = "kubesphere-config"
+	IngressControllerPrefix       = "captain-router-"
+	KubeSphereConfigName          = "captain-config"
 	CaptainConfigMapDataKey       = "captain.yaml"
 
-	ClusterNameLabelKey               = "kubesphere.io/cluster"
-	NameLabelKey                      = "kubesphere.io/name"
-	WorkspaceLabelKey                 = "kubesphere.io/workspace"
-	NamespaceLabelKey                 = "kubesphere.io/namespace"
-	DisplayNameAnnotationKey          = "kubesphere.io/alias-name"
-	ChartRepoIdLabelKey               = "application.kubesphere.io/repo-id"
-	ChartApplicationIdLabelKey        = "application.kubesphere.io/app-id"
-	ChartApplicationVersionIdLabelKey = "application.kubesphere.io/app-version-id"
-	CategoryIdLabelKey                = "application.kubesphere.io/app-category-id"
-	DanglingAppCleanupKey             = "application.kubesphere.io/app-cleanup"
-	CreatorAnnotationKey              = "kubesphere.io/creator"
-	UsernameLabelKey                  = "kubesphere.io/username"
-	DevOpsProjectLabelKey             = "kubesphere.io/devopsproject"
+	ClusterNameLabelKey               = "captain.io/cluster"
+	NameLabelKey                      = "captain.io/name"
+	WorkspaceLabelKey                 = "captain.io/workspace"
+	NamespaceLabelKey                 = "captain.io/namespace"
+	DisplayNameAnnotationKey          = "captain.io/alias-name"
+	ChartRepoIdLabelKey               = "captain.kubesphere.io/repo-id"
+	ChartApplicationIdLabelKey        = "application.captain.io/app-id"
+	ChartApplicationVersionIdLabelKey = "application.captain.io/app-version-id"
+	CategoryIdLabelKey                = "application.captain.io/app-category-id"
+	DanglingAppCleanupKey             = "application.captain.io/app-cleanup"
+	CreatorAnnotationKey              = "captain.io/creator"
+	UsernameLabelKey                  = "captain.io/username"
+	DevOpsProjectLabelKey             = "captain.io/devopsproject"
 	KubefedManagedLabel               = "kubefed.io/managed"
 
 	UserNameHeader = "X-Token-Username"
@@ -91,7 +91,7 @@ const (
 
 	NetworkTopologyTag = "Network Topology"
 
-	KubeSphereMetricsTag = "KubeSphere Metrics"
+	CaptainMetricsTag = "Captain Metrics"
 	ClusterMetricsTag    = "Cluster Metrics"
 	NodeMetricsTag       = "Node Metrics"
 	NamespaceMetricsTag  = "Namespace Metrics"
@@ -124,12 +124,12 @@ const (
 	AlertingTag        = "Alerting"
 
 	NotificationTag             = "Notification"
-	NotificationSecretNamespace = "kubesphere-monitoring-federated"
+	NotificationSecretNamespace = "captain-monitoring-federated"
 	NotificationManagedLabel    = "notification.kubesphere.io/managed"
 
 	DashboardTag = "Dashboard"
 )
 
 var (
-	SystemNamespaces = []string{KubeSphereNamespace, KubeSphereLoggingNamespace, KubeSphereMonitoringNamespace, OpenPitrixNamespace, KubeSystemNamespace, IstioNamespace, KubesphereDevOpsNamespace, PorterNamespace}
+	SystemNamespaces = []string{CaptainNamespace, CaptainLoggingNamespace, CaptainMonitoringNamespace, OpenPitrixNamespace, KubeSystemNamespace, IstioNamespace, CaptainDevOpsNamespace, PorterNamespace}
 )

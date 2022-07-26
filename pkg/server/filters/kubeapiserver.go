@@ -11,8 +11,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 
-	"captain/pkg/apiserver/request"
-	"captain/pkg/server/errors"
+	"captain/pkg/server/request"
+	"captain/pkg/simple/server/errors"
 )
 
 // WithKubeAPIServer proxy request to kubernetes service if requests path starts with /api
