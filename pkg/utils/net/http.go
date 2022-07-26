@@ -47,7 +47,7 @@ func DoHTTPRequest(client *http.Client, reqURL, method string, header *http.Head
 		urlValues.Add(key, value)
 	}
 	request.URL.RawQuery = urlValues.Encode()
-	klog.Infof("request method/url: [%s] %S", method, reqURL)
+	klog.Infof("request method/url: [%s] %s", method, reqURL)
 	klog.Infof("request header: %v", request.Header)
 	resp, err = client.Do(request)
 	if err != nil {
