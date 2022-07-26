@@ -22,10 +22,10 @@ endif
 
 all: test captain-server
 
-.PHONY: dep test binary image
+.PHONY: test binary image
 
 test:
-    go test -v ./...
+	go test -v ./...
 
 build: | captain-server ; $(info $(M)...Build all f binary.) @ ## Build all of binary
 
