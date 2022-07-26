@@ -9,14 +9,14 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: captain-apiserver
+  name: captain-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
-  name: captain-apiserver
+  name: captain-server
   namespace: captain-system
 
 ---
@@ -25,7 +25,7 @@ subjects:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: captain-apiserver
+  name: captain-server
   namespace: captain-system
 
 ---
@@ -35,22 +35,22 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: captain-apiserver
-  name: captain-apiserver
+    app: captain-server
+  name: captain-server
   namespace: captain-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: captain-apiserver
+      app: captain-server
   template:
     metadata:
       labels:
-        app: captain-apiserver
+        app: captain-server
     spec:
       containers:
       - image: DOCKER_REGISTRY/cuboss/captain-server:v0.1.0
-        name: captain-apiserver
+        name: captain-server
         ports:
         - containerPort: 9090
         resources:
@@ -60,7 +60,7 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
-      serviceAccountName: captain-apiserver
+      serviceAccountName: captain-server
 
 ---
 
@@ -69,8 +69,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: captain-apiserver
-  name: captain-apiserver
+    app: captain-server
+  name: captain-server
   namespace: captain-system
 spec:
   ports:
@@ -78,4 +78,4 @@ spec:
     port: 9090
     targetPort: http
   selector:
-    app: captain-apiserver
+    app: captain-server

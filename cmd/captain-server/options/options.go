@@ -1,7 +1,7 @@
 package options
 
 import (
-	"captain/pkg/apiserver"
+	"captain/pkg/server"
 	"captain/pkg/simple/client/k8s"
 	"flag"
 	"fmt"
@@ -9,15 +9,15 @@ import (
 	"net/http"
 	"strings"
 
+	captainserverconfig "captain/pkg/server/config"
+	genericoptions "captain/pkg/simple/server/options"
 	cliflag "k8s.io/component-base/cli/flag"
-	apiserverconfig "captain/pkg/apiserver/config"
-	genericoptions "captain/pkg/server/options"
 )
 
 type ServerRunOptions struct {
 	ConfigFile              string
 	GenericServerRunOptions *genericoptions.ServerRunOptions
-	*apiserverconfig.Config
+	*captainserverconfig.Config
 
 	//
 	DebugMode bool
@@ -26,7 +26,7 @@ type ServerRunOptions struct {
 func NewServerRunOptions() *ServerRunOptions {
 	s := &ServerRunOptions{
 		GenericServerRunOptions: genericoptions.NewServerRunOptions(),
-		Config:                  apiserverconfig.New(),
+		Config:                  captainserverconfig.New(),
 	}
 
 	return s
@@ -52,8 +52,8 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 	return fss
 }
 
-func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*apiserver.APIServer, error) {
-	apiServer := &apiserver.APIServer{
+func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.APIServer, error) {
+	apiServer := &server.APIServer{
 		Config:     s.Config,
 	}
 
@@ -63,11 +63,11 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*apiserver.APIS
 	}
 	apiServer.KubernetesClient = kubernetesClient
 
-	server := &http.Server{
+	captainServer := &http.Server{
 		Addr: fmt.Sprintf(":%d", s.GenericServerRunOptions.InsecurePort),
 	}
 
-	apiServer.Server = server
+	apiServer.Server = captainServer
 
 	return apiServer, nil
 }

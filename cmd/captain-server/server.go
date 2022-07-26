@@ -12,15 +12,15 @@ import (
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	apiserverconfig "captain/pkg/apiserver/config"
-	"captain/cmd/apiserver/options"
+	captainserverconfig "captain/pkg/server/config"
+	"captain/cmd/captain-server/options"
 )
 
 func NewAPIServerCommand() *cobra.Command {
 	s := options.NewServerRunOptions()
 
 	// Load configuration from file
-	conf, err := apiserverconfig.TryLoadFromDisk()
+	conf, err := captainserverconfig.TryLoadFromDisk()
 	if err == nil {
 		s = &options.ServerRunOptions{
 			GenericServerRunOptions: s.GenericServerRunOptions,
@@ -31,15 +31,15 @@ func NewAPIServerCommand() *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use: "captain-apiserver",
-		Long: `The Captain API server validates and configures data for the API objects. 
+		Use: "captain-server",
+		Long: `The Captain server validates and configures data for the API objects. 
 The API Server services REST operations and provides the frontend to the
 cluster's shared state through which all other components interact.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if errs := s.Validate(); len(errs) != 0 {
 				return utilerrors.NewAggregate(errs)
 			}
-			return Run(s, apiserverconfig.WatchConfigChange(), signals.SetupSignalHandler())
+			return Run(s, captainserverconfig.WatchConfigChange(), signals.SetupSignalHandler())
 		},
 		SilenceUsage: true,
 	}
@@ -59,7 +59,7 @@ cluster's shared state through which all other components interact.`,
 
 	versionCmd := &cobra.Command{
 		Use:   "version",
-		Short: "Print the version of Captain apiserver",
+		Short: "Print the version of captain-server",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Println(version.Get())
 		},
@@ -70,7 +70,7 @@ cluster's shared state through which all other components interact.`,
 	return cmd
 }
 
-func Run(s *options.ServerRunOptions, configCh <-chan apiserverconfig.Config, ctx context.Context) error {
+func Run(s *options.ServerRunOptions, configCh <-chan captainserverconfig.Config, ctx context.Context) error {
 	ictx, cancelFunc := context.WithCancel(context.TODO())
 	errCh := make(chan error)
 	defer close(errCh)
@@ -81,7 +81,7 @@ func Run(s *options.ServerRunOptions, configCh <-chan apiserverconfig.Config, ct
 	}()
 
 	// The ctx (signals.SetupSignalHandler()) is to control the entire program life cycle,
-	// The ictx(internal context)  is created here to control the life cycle of the ks-apiserver(http server, sharedInformer etc.)
+	// The ictx(internal context)  is created here to control the life cycle of the captain-server(http server, sharedInformer etc.)
 	// when config change, stop server and renew context, start new server
 	for {
 		select {

@@ -6,7 +6,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/klog"
 
-	"captain/pkg/apiserver/runtime"
+	"captain/pkg/server/runtime"
 	"captain/pkg/version"
 )
 
@@ -15,18 +15,18 @@ func AddToContainer(container *restful.Container, k8sDiscovery discovery.Discove
 
 	webservice.Route(webservice.GET("/version").
 		To(func(request *restful.Request, response *restful.Response) {
-			ksVersion := version.Get()
+			captainVersion := version.Get()
 
 			if k8sDiscovery != nil {
 				k8sVersion, err := k8sDiscovery.ServerVersion()
 				if err == nil {
-					ksVersion.Kubernetes = k8sVersion
+					captainVersion.Kubernetes = k8sVersion
 				} else {
 					klog.Errorf("Failed to get kubernetes version, error %v", err)
 				}
 			}
 
-			response.WriteAsJson(ksVersion)
+			response.WriteAsJson(captainVersion)
 		})).
 		Doc("Captain version")
 

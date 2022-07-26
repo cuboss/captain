@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"captain/pkg/server/errors"
+	"captain/pkg/simple/server/errors"
 )
 
 var ErrNoSuchKey = errors.New("no such key")

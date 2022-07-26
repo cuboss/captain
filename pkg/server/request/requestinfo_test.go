@@ -10,8 +10,8 @@ import (
 
 func newTestRequestInfoResolver() RequestInfoResolver {
 	requestInfoResolver := &RequestInfoFactory{
-		APIPrefixes:          sets.NewString("api", "apis", "kapis", "kapi"),
-		GrouplessAPIPrefixes: sets.NewString("api", "kapi"),
+		APIPrefixes:          sets.NewString("api", "apis", "capis", "capi"),
+		GrouplessAPIPrefixes: sets.NewString("api", "capi"),
 	}
 
 	return requestInfoResolver
@@ -101,7 +101,7 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 		},
 		{
 			name:                      "list namespaces",
-			url:                       "/kapis/resources.kubesphere.io/v1alpha3/workspaces/workspace1/namespaces",
+			url:                       "/capis/resources.captain.io/v1alpha3/workspaces/workspace1/namespaces",
 			method:                    http.MethodGet,
 			expectedErr:               nil,
 			expectedVerb:              "list",
@@ -113,7 +113,7 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 		},
 		{
 			name:                      "list namespaces of cluster gondor",
-			url:                       "/kapis/clusters/gondor/resources.kubesphere.io/v1alpha3/workspaces/workspace1/namespaces",
+			url:                       "/capis/clusters/gondor/resources.captain.io/v1alpha3/workspaces/workspace1/namespaces",
 			method:                    http.MethodGet,
 			expectedErr:               nil,
 			expectedVerb:              "list",
@@ -125,7 +125,7 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 		},
 		{
 			name:                      "list clusters",
-			url:                       "/apis/cluster.kubesphere.io/v1alpha1/clusters",
+			url:                       "/apis/cluster.captain.io/v1alpha1/clusters",
 			method:                    http.MethodGet,
 			expectedErr:               nil,
 			expectedVerb:              "list",
@@ -137,7 +137,7 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 		},
 		{
 			name:                      "get cluster gondor",
-			url:                       "/apis/cluster.kubesphere.io/v1alpha1/clusters/gondor",
+			url:                       "/apis/cluster.captain.io/v1alpha1/clusters/gondor",
 			method:                    http.MethodGet,
 			expectedErr:               nil,
 			expectedVerb:              "get",
@@ -161,7 +161,7 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 		},
 		{
 			name:                      "",
-			url:                       "/kapis/tenant.kubesphere.io/v1alpha2/workspaces",
+			url:                       "/capis/tenant.captain.io/v1alpha2/workspaces",
 			method:                    http.MethodGet,
 			expectedErr:               nil,
 			expectedVerb:              "list",
@@ -173,8 +173,8 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 			expectedResource:          "workspaces",
 		},
 		{
-			name:                      "kubesphere api without clusters",
-			url:                       "/kapis/foo/bar/",
+			name:                      "captain api without clusters",
+			url:                       "/capis/foo/bar/",
 			method:                    http.MethodPost,
 			expectedErr:               nil,
 			expectedVerb:              "POST",

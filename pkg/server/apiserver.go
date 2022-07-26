@@ -1,4 +1,4 @@
-package apiserver
+package server
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"net/http"
     urlruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-    apiserverconfig "captain/pkg/apiserver/config"
+	captainserverconfig "captain/pkg/server/config"
 	"captain/pkg/simple/client/k8s"
 	"captain/pkg/capis/version"
-	"captain/pkg/apiserver/filters"
-	"captain/pkg/apiserver/request"
+	"captain/pkg/server/filters"
+	"captain/pkg/server/request"
 )
 
 type APIServer struct {
@@ -21,7 +21,7 @@ type APIServer struct {
 
 	Server *http.Server
 
-	Config *apiserverconfig.Config
+	Config *captainserverconfig.Config
 
 	// webservice container, where all webservice defines
 	container *restful.Container
