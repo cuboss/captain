@@ -17,7 +17,7 @@ import (
 type ServerRunOptions struct {
 	ConfigFile              string
 	GenericServerRunOptions *genericoptions.ServerRunOptions
-	*apiserverconfig.Config
+	*captainserverconfig.Config
 
 	//
 	DebugMode bool
@@ -26,7 +26,7 @@ type ServerRunOptions struct {
 func NewServerRunOptions() *ServerRunOptions {
 	s := &ServerRunOptions{
 		GenericServerRunOptions: genericoptions.NewServerRunOptions(),
-		Config:                  apiserverconfig.New(),
+		Config:                  captainserverconfig.New(),
 	}
 
 	return s
@@ -63,11 +63,11 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.APIServ
 	}
 	apiServer.KubernetesClient = kubernetesClient
 
-	server := &http.Server{
+	captainServer := &http.Server{
 		Addr: fmt.Sprintf(":%d", s.GenericServerRunOptions.InsecurePort),
 	}
 
-	apiServer.Server = server
+	apiServer.Server = captainServer
 
 	return apiServer, nil
 }
