@@ -23,7 +23,7 @@ func newTestConfig() (*Config, error) {
 		RedisOptions: &cache.Options{
 			Host:     "localhost",
 			Port:     6379,
-			Password: "KUBESPHERE_REDIS_PASSWORD",
+			Password: "Acd13G",
 			DB:       0,
 		},
 

@@ -25,7 +25,7 @@ all: test captain-server
 .PHONY: dep test binary image
 
 test:
-    @go test
+    @go test ./...
 
 build: | captain-server ; $(info $(M)...Build all f binary.) @ ## Build all of binary
 

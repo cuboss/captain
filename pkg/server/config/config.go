@@ -138,7 +138,7 @@ func WatchConfigChange() <-chan Config {
 // to hide sensitive information
 func (conf *Config) ToMap() map[string]bool {
 	conf.stripEmptyOptions()
-	result := make(map[string]bool, 0)
+	result := make(map[string]bool)
 
 	if conf == nil {
 		return result

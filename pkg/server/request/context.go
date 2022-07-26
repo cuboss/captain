@@ -25,7 +25,7 @@ const (
 	auditKey
 
 	// audiencesKey is the context key for request audiences.
-	audiencesKey
+	// audiencesKey
 )
 
 // NewContext instantiates a base context object for request flows.
