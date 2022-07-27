@@ -1,0 +1,517 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: gaianodes.gaia.welkin
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.runtime
+    name: Runtime
+    type: string
+  - JSONPath: .status.nodeStatus
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  - JSONPath: .status.serviceStatus
+    name: ServiceStatus
+    priority: 1
+    type: string
+  group: gaia.welkin
+  names:
+    kind: GaiaNode
+    listKind: GaiaNodeList
+    plural: gaianodes
+    singular: gaianode
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: GaiaNode is the Schema for the guestnodes API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: GaiaNodeSpec defines the desired state of GuestNode
+          properties:
+            annotations:
+              additionalProperties:
+                type: string
+              description: The annotations at the node.
+              type: object
+            deploymentFeature:
+              description: Node deployment feature
+              properties:
+                differentHost:
+                  type: boolean
+                persistentStorage:
+                  type: boolean
+              type: object
+            expectHost:
+              description: The host IP which the user expect to run their node
+              type: string
+            files:
+              description: 节点产生的文件
+              items:
+                description: FileConf 定义的存储
+                properties:
+                  data:
+                    type: string
+                  node:
+                    format: int32
+                    type: integer
+                  path:
+                    type: string
+                required:
+                - data
+                - path
+                type: object
+              type: array
+            host:
+              description: The host (domain) name of the node.
+              type: string
+            hostAliases:
+              description: node级别的dns记录描述  node level
+              items:
+                description: HostAlias host aliases record
+                properties:
+                  hosts:
+                    description: Hosts host names
+                    items:
+                      type: string
+                    type: array
+                  ip:
+                    description: IP host ip
+                    type: string
+                required:
+                - hosts
+                - ip
+                type: object
+              type: array
+            image:
+              description: Image used by the startup node.
+              type: string
+            name:
+              description: The name of the node in cluster
+              type: string
+            networkcards:
+              description: The node networkcards
+              items:
+                description: NetworkCardConf 定义网卡
+                properties:
+                  network:
+                    type: string
+                  nodeIP:
+                    type: string
+                required:
+                - network
+                type: object
+              type: array
+            portforwards:
+              description: The node portforwards
+              items:
+                description: PortForWardConf 定义端口
+                properties:
+                  area:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  target_host:
+                    type: string
+                  target_port:
+                    type: integer
+                  vpc_name:
+                    type: string
+                  vpc_namespace:
+                    type: string
+                required:
+                - area
+                - name
+                - namespace
+                - target_port
+                - vpc_namespace
+                type: object
+              type: array
+            ports:
+              description: 节点映射到主机的端口
+              items:
+                description: PortConf 定义的存储
+                properties:
+                  name:
+                    type: string
+                  nodePort:
+                    type: string
+                  port:
+                    type: string
+                  protocol:
+                    description: Protocol defines network protocols supported for
+                      things like container ports.
+                    type: string
+                  targetPort:
+                    type: string
+                type: object
+              type: array
+            removeAction:
+              description: The process running when befor node is deleted
+              properties:
+                args:
+                  description: Args arguments of process
+                  items:
+                    type: string
+                  type: array
+                cmd:
+                  description: command want to run.
+                  type: string
+                envs:
+                  description: Env environments of process
+                  items:
+                    type: string
+                  type: array
+                id:
+                  description: 进程标识
+                  type: string
+                maxOutCount:
+                  description: 进程输出的文件数
+                  format: int32
+                  type: integer
+                maxOutSize:
+                  description: 进程的输出最大大小
+                  format: int64
+                  type: integer
+                stderr:
+                  description: 进程的错误输出文件
+                  type: string
+                stdout:
+                  description: 进程的标准输出文件
+                  type: string
+              required:
+              - cmd
+              type: object
+            resource:
+              description: The resources used by the node.
+              properties:
+                limits:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
+            runtime:
+              description: Runtime, VM or Runc
+              type: string
+            pvc:
+              description: The node pvc
+              items:
+                description: pvc
+                properties:
+                  name:
+                    type: string
+                  kind:
+                    type: string
+                required:
+                  - name
+                type: object
+              type: array
+            labels:
+              description: The node labels
+              items:
+                description: labels
+                properties:
+                  key:
+                    type: string
+                  value:
+                    type: string
+                required:
+                  - key
+                type: object
+              type: array
+            tolerations:
+              description: 污点
+              items:
+                description: 污点
+                properties:
+                  key:
+                    type: string
+                  operator:
+                    type: string
+                  value:
+                    type: string
+                  effect:
+                    type: string
+                  tolerationSeconds:
+                    format: int64
+                    type: integer
+                type: object
+              type: array
+            services:
+              additionalProperties:
+                description: Service 定义GuestNode内运行的业务的相关信息
+                properties:
+                  check:
+                    description: The checker that runs after the service.
+                    properties:
+                      args:
+                        description: Args arguments of process
+                        items:
+                          type: string
+                        type: array
+                      cmd:
+                        description: command want to run.
+                        type: string
+                      envs:
+                        description: Env environments of process
+                        items:
+                          type: string
+                        type: array
+                      id:
+                        description: 进程标识
+                        type: string
+                      maxOutCount:
+                        description: 进程输出的文件数
+                        format: int32
+                        type: integer
+                      maxOutSize:
+                        description: 进程的输出最大大小
+                        format: int64
+                        type: integer
+                      stderr:
+                        description: 进程的错误输出文件
+                        type: string
+                      stdout:
+                        description: 进程的标准输出文件
+                        type: string
+                    required:
+                    - cmd
+                    type: object
+                  dependence:
+                    description: Dependence 服务的依赖集
+                    items:
+                      type: string
+                    type: array
+                  init:
+                    description: The initialization process that runs before the service.
+                    properties:
+                      args:
+                        description: Args arguments of process
+                        items:
+                          type: string
+                        type: array
+                      cmd:
+                        description: command want to run.
+                        type: string
+                      envs:
+                        description: Env environments of process
+                        items:
+                          type: string
+                        type: array
+                      id:
+                        description: 进程标识
+                        type: string
+                      maxOutCount:
+                        description: 进程输出的文件数
+                        format: int32
+                        type: integer
+                      maxOutSize:
+                        description: 进程的输出最大大小
+                        format: int64
+                        type: integer
+                      stderr:
+                        description: 进程的错误输出文件
+                        type: string
+                      stdout:
+                        description: 进程的标准输出文件
+                        type: string
+                    required:
+                    - cmd
+                    type: object
+                  runType:
+                    description: RunType 服务期望的状态
+                    type: string
+                  srv:
+                    description: process info of service.
+                    properties:
+                      args:
+                        description: Args arguments of process
+                        items:
+                          type: string
+                        type: array
+                      cmd:
+                        description: command want to run.
+                        type: string
+                      envs:
+                        description: Env environments of process
+                        items:
+                          type: string
+                        type: array
+                      id:
+                        description: 进程标识
+                        type: string
+                      maxOutCount:
+                        description: 进程输出的文件数
+                        format: int32
+                        type: integer
+                      maxOutSize:
+                        description: 进程的输出最大大小
+                        format: int64
+                        type: integer
+                      stderr:
+                        description: 进程的错误输出文件
+                        type: string
+                      stdout:
+                        description: 进程的标准输出文件
+                        type: string
+                    required:
+                    - cmd
+                    type: object
+                  successLevel:
+                    description: SuccessLevel 服务成功的层次(Cluster/Node)
+                    type: string
+                  unique:
+                    type: boolean
+                required:
+                - srv
+                type: object
+              description: The services running in the Guest Node, key of map define
+                service type
+              type: object
+            sidecarimage:
+              description: SidecarImage used by the startup vmnode.
+              type: string
+            type:
+              description: Type of node, it must reference one of node types in the
+                template.
+              type: string
+            vars:
+              additionalProperties:
+                type: string
+              description: The variables at the node level.
+              type: object
+            volumes:
+              description: 节点挂载目录或文件
+              items:
+                description: VolumeConf 定义的目录挂载
+                properties:
+                  data:
+                    type: string
+                  hostPath:
+                    type: string
+                  mode:
+                    format: int32
+                    type: integer
+                  mountPropagationMode:
+                    type: string
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - hostPath
+                - name
+                - path
+                - type
+                type: object
+              type: array
+            workPath:
+              description: The directory that the node mounts on.
+              type: string
+          required:
+          - name
+          - type
+          type: object
+        status:
+          description: GaiaNodeStatus defines the observed state of GuestNode
+          properties:
+            networks:
+              description: Network Network
+              items:
+                description: NetworkInfo
+                properties:
+                  ipAddress:
+                    type: string
+                  macAddress:
+                    type: string
+                  name:
+                    type: string
+                type: object
+              type: array
+            nodeStatus:
+              description: The state of this node.
+              type: string
+            physicalIP:
+              description: IP 所在的宿主IP
+              type: string
+            portforwardStatus:
+              additionalProperties:
+                description: PortForWardState
+                properties:
+                  host:
+                    type: string
+                  name:
+                    type: string
+                  port:
+                    type: integer
+                  port_type:
+                    type: string
+                type: object
+              type: object
+            serviceStatus:
+              additionalProperties:
+                description: SvcState 描述集群中各种服务的当前运行状态
+                type: string
+              description: The services state at the node level. The key of the map
+                describes which service(type) and the value describes the state.
+              type: object
+            storage:
+              description: Storage 存储信息
+              type: string
+            wrapperRegister:
+              description: Gaia wrapper can connect 11.254.0.1:443
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
