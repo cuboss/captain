@@ -1,0 +1,106 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: gaiasets.gaia.welkin
+spec:
+  group: gaia.welkin
+  names:
+    kind: GaiaSet
+    listKind: GaiaSetList
+    plural: gaiasets
+    singular: gaiaset
+  scope: Namespaced
+  versions:
+  - schema:
+      openAPIV3Schema:
+        description: GaiaSet is the Schema for the gaiaclustersets API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+                  of an object. Servers should convert recognized schemas to the latest
+                  internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+                  object represents. Servers may infer this from the endpoint the client
+                  submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: GaiaSetSpec defines the desired state of GaiaClusterSet
+            properties:
+              deploymentFeature:
+                description: Cluster deployment feature
+                properties:
+                  differentHost:
+                    type: boolean
+                  persistentStorage:
+                    type: boolean
+                type: object
+              hostAliases:
+                description: Records of the hosts files added to each node in the cluster.
+                items:
+                  description: HostAlias host aliases record
+                  properties:
+                    hosts:
+                      description: Hosts host names
+                      items:
+                        type: string
+                      type: array
+                    ip:
+                      description: IP host ip
+                      type: string
+                  required:
+                    - hosts
+                    - ip
+                  type: object
+                type: array
+              nodes:
+                items:
+                  type: string
+                type: array
+              runtime:
+                description: runtime by VM/Runc
+                type: string
+              template:
+                description: The template name for the cluster, it allows to select
+                  a specific configuration template.
+                type: string
+              vars:
+                additionalProperties:
+                  type: string
+                description: The variables at the cluster level.
+                type: object
+              vpc:
+                description: The name of the VPC network used by the cluster.
+                type: string
+            required:
+              - nodes
+              - template
+              - vpc
+            type: object
+          status:
+            description: GaiaSetStatus defines the observed state of GaiaSet
+            properties:
+              serviceStatus:
+                additionalProperties:
+                  description: SvcState 描述集群中各种服务的当前运行状态
+                  type: string
+                description: The key of the map describes which service(nodeType.servicetype)
+                  and the value describes the state.
+                type: object
+            type: object
+        type: object
+    name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
