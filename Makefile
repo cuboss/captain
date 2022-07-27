@@ -25,7 +25,7 @@ all: test captain-server
 .PHONY: test binary image
 
 test:
-	go test -v ./...
+	go test -v ./... -coverprofile=coverage.txt -covermode=atomic
 
 build: | captain-server ; $(info $(M)...Build all f binary.) @ ## Build all of binary
 
