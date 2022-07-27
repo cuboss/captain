@@ -1,6 +1,14 @@
 # captain
 
 This project aims to buillding a platform which has rich function of managing k8s clusters in everywhere network would be reach.
+## Overview
+
+[![codecov](https://codecov.io/gh/cuboss/captain/branch/main/graph/badge.svg)](https://codecov.io/gh/cuboss/captain)
+[![Release](https://img.shields.io/github/v/release/cuboss/captain)](https://img.shields.io/github/v/release/cuboss/captain)
+
+|                                             **Stargazers Over Time**                                              | **Contributors Over Time**                                                                                                                                                                                                                       |
+|:-----------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|      [![Stargazers over time](https://starchart.cc/cuboss/captain.svg)](https://starchart.cc/cuboss/captain)      | [![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=cuboss/captain)](https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=cuboss/captain) |
 
 ## quick-start
 
