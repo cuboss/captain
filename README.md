@@ -1,6 +1,6 @@
 # captain
 
-This project aims to buillding a platform which has rich function of managing k8s clusters in everywhere network would be reach.
+This project aims to building a platform which has rich function of managing k8s clusters in everywhere network would be reach.
 ## Overview
 
 [![codecov](https://codecov.io/gh/cuboss/captain/branch/main/graph/badge.svg)](https://codecov.io/gh/cuboss/captain)
