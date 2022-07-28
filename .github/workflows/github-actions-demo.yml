@@ -1,15 +1,12 @@
 name: Build and Test
 on:
   push:
-    tags:
+    tasg:
       - v*
     branches:
       - main
       - master
   pull_request:
-    branches:
-      - main
-      - master
 
 jobs:
 
@@ -68,4 +65,3 @@ jobs:
         with:
           token: ${{secrets.CODECOV_TOKEN}}
           file: ./coverage.txt
-

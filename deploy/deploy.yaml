@@ -66,7 +66,7 @@ spec:
             name: captain-config
             defaultMode: 420
       containers:
-      - image: cgdeeplearn/captain-server:latest
+      - image: DOCKER_REGISTRY/cuboss/captain-server:v0.1.0
         name: captain-server
         ports:
         - containerPort: 9090
@@ -96,6 +96,6 @@ spec:
   ports:
   - name: http
     port: 9090
-    targetPort: 9090
+    targetPort: http
   selector:
     app: captain-server
