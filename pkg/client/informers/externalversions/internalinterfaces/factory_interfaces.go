@@ -19,7 +19,7 @@ limitations under the License.
 package internalinterfaces
 
 import (
-	versioned "captain/pkg/client/clientset/versioned"
+	externalversions "captain/pkg/client/clientset/externalversions"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,8 +27,8 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// NewInformerFunc takes versioned.Interface and time.Duration to return a SharedIndexInformer.
-type NewInformerFunc func(versioned.Interface, time.Duration) cache.SharedIndexInformer
+// NewInformerFunc takes externalversions.Interface and time.Duration to return a SharedIndexInformer.
+type NewInformerFunc func(externalversions.Interface, time.Duration) cache.SharedIndexInformer
 
 // SharedInformerFactory a small interface to allow for adding an informer without an import cycle
 type SharedInformerFactory interface {

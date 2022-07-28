@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "captain/pkg/client/clientset/versioned"
-	clusterv1alpha1 "captain/pkg/client/clientset/versioned/typed/cluster/v1alpha1"
-	fakeclusterv1alpha1 "captain/pkg/client/clientset/versioned/typed/cluster/v1alpha1/fake"
+	clientset "captain/pkg/client/clientset/externalversions"
+	clusterv1alpha1 "captain/pkg/client/clientset/externalversions/typed/cluster/v1alpha1"
+	fakeclusterv1alpha1 "captain/pkg/client/clientset/externalversions/typed/cluster/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"

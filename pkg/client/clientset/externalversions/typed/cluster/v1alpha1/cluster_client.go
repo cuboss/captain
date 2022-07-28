@@ -20,7 +20,7 @@ package v1alpha1
 
 import (
 	v1alpha1 "captain/apis/cluster/v1alpha1"
-	"captain/pkg/client/clientset/versioned/scheme"
+	"captain/pkg/client/clientset/externalversions/scheme"
 	"net/http"
 
 	rest "k8s.io/client-go/rest"

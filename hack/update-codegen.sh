@@ -20,8 +20,10 @@ set -o pipefail
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")
 
-# !!! if generate more resources, set this field eg."cluster:v1alpha1 cluster:v1alpha2"
+# __PATCH__ if generate more resources, set this field eg."cluster:v1alpha1 cluster:v1alpha2"
 GROUPS_WITH_VERSIONS="cluster:v1alpha1"
+# __PATCH__ clientset name
+export CLIENTSET_NAME_VERSIONED="externalversions"
 
 # generate the code with:
 # --output-base    because this script should also be able to run inside the vendor dir of

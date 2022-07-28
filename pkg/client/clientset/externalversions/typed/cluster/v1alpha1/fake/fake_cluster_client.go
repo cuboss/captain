@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "captain/pkg/client/clientset/versioned/typed/cluster/v1alpha1"
+	v1alpha1 "captain/pkg/client/clientset/externalversions/typed/cluster/v1alpha1"
 
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
