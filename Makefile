@@ -1,5 +1,5 @@
 # captain-server version
-PROJeCT_NAME := "captain"
+PROJECT_NAME := "captain"
 VERSION = v0.1.0
 
 OUTPUT_DIR=bin
@@ -9,8 +9,6 @@ CAPTAIN_APISERVER_BUILDPATH=./cmd/captain-server
 
 IMAGE_NAME=cuboss/captain-server
 
-PKG := "$(PROJECT_NAME)"
-PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
