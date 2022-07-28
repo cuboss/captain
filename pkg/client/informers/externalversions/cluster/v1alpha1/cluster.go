@@ -20,7 +20,7 @@ package v1alpha1
 
 import (
 	clusterv1alpha1 "captain/apis/cluster/v1alpha1"
-	externalversions "captain/pkg/client/clientset/externalversions"
+	versioned "captain/pkg/client/clientset/versioned"
 	internalinterfaces "captain/pkg/client/informers/externalversions/internalinterfaces"
 	v1alpha1 "captain/pkg/client/listers/cluster/v1alpha1"
 	"context"
@@ -47,14 +47,14 @@ type clusterInformer struct {
 // NewClusterInformer constructs a new informer for Cluster type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewClusterInformer(client externalversions.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+func NewClusterInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewFilteredClusterInformer(client, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredClusterInformer constructs a new informer for Cluster type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredClusterInformer(client externalversions.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredClusterInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
@@ -76,7 +76,7 @@ func NewFilteredClusterInformer(client externalversions.Interface, resyncPeriod 
 	)
 }
 
-func (f *clusterInformer) defaultInformer(client externalversions.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func (f *clusterInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	return NewFilteredClusterInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
