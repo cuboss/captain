@@ -1,9 +1,6 @@
-
 package config
 
 import (
-	"captain/pkg/constants"
-	"captain/pkg/simple/client/k8s"
 	"fmt"
 	"reflect"
 	"strings"
@@ -15,9 +12,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog"
 
-
+	"captain/pkg/constants"
 	"captain/pkg/simple/client/cache"
-
+	"captain/pkg/simple/client/k8s"
+	"captain/pkg/simple/client/multicluster"
 )
 
 // Package config saves configuration for running KubeSphere components
@@ -37,7 +35,6 @@ import (
 //
 // --mysql-host mysql.openpitrix-system.svc --mysql-username king --mysql-password 1234
 //
-
 
 var (
 	// singleton instance of config package
@@ -109,17 +106,16 @@ func defaultConfig() *config {
 
 // Config defines everything needed for captain-server to deal with external services
 type Config struct {
-	KubernetesOptions     *k8s.KubernetesOptions  `json:"kubernetes,omitempty" yaml:"kubernetes,omitempty" mapstructure:"kubernetes"`
-	RedisOptions          *cache.Options          `json:"redis,omitempty" yaml:"redis,omitempty" mapstructure:"redis"`
-
+	KubernetesOptions   *k8s.KubernetesOptions `json:"kubernetes,omitempty" yaml:"kubernetes,omitempty" mapstructure:"kubernetes"`
+	RedisOptions        *cache.Options         `json:"redis,omitempty" yaml:"redis,omitempty" mapstructure:"redis"`
+	MultiClusterOptions *multicluster.Options  `json:"multicluster,omitempty" yaml:"multicluster,omitempty" mapstructure:"multicluster"`
 }
 
 // newConfig creates a default non-empty Config
 func New() *Config {
 	return &Config{
-		KubernetesOptions:     k8s.NewKubernetesOptions(),
-		RedisOptions:          cache.NewRedisOptions(),
-
+		KubernetesOptions: k8s.NewKubernetesOptions(),
+		RedisOptions:      cache.NewRedisOptions(),
 	}
 }
 
@@ -151,8 +147,6 @@ func (conf *Config) ToMap() map[string]bool {
 		if strings.HasPrefix(name, "-") {
 			continue
 		}
-
-
 
 		if c.Field(i).IsNil() {
 			result[name] = false

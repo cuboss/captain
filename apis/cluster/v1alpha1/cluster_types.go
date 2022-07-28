@@ -26,6 +26,7 @@ const (
 	ResourcesSingularCluster = "cluster"
 	ResourcesPluralCluster   = "clusters"
 
+	// 主集群，区别于成员集群，此处主从概念仅适用于captain集群
 	HostCluster = "cluster-role.captain.io/host"
 	// Description of which region the cluster been placed
 	ClusterRegion = "cluster.captain.io/region"
