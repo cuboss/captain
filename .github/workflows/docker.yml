@@ -17,7 +17,6 @@ jobs:
   docker:
     name: Docker-CI
     runs-on: ubuntu-latest
-    needs: [build]
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
