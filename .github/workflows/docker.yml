@@ -12,12 +12,6 @@ on:
       - master
 
 jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    steps:
-      
 
   docker:
     name: Docker-CI
