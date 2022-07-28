@@ -29,6 +29,18 @@ metadata:
   namespace: captain-system
 
 ---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: captain-config
+  namespace: captain-system
+data:
+  captain.yaml: |-
+    authorization:
+      mode: "AlwaysAllow"
+
+---
 
 # Deployment
 apiVersion: apps/v1
@@ -48,6 +60,11 @@ spec:
       labels:
         app: captain-server
     spec:
+      volumes:
+        - name: captain-config
+          configMap:
+            name: captain-config
+            defaultMode: 420
       containers:
       - image: cgdeeplearn/captain-server:latest
         name: captain-server
@@ -60,6 +77,9 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
+        volumeMounts:
+          - name: captain-config
+            mountPath: /etc/captain/
       serviceAccountName: captain-server
 
 ---
