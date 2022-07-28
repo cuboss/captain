@@ -26,7 +26,7 @@
 ```shell
 # in a working directory (xxx)
 $ cd xxx
-$ git clone https://github.com/yourgitaccount/captain.git
+$ git clone https://github.com/$yourgitaccount/captain.git
 
 $ cd captain
 # add original repo as upstream remote
@@ -53,8 +53,52 @@ $ git rebase upstream/main
 
 ### Step4. Add new features or fix issues
 
+- create a branch from main (of your repo)
+
+```shell
+git checkout -b somefeature
+```
+
+- edit code on `somefeature` branch
+
+- do test and build
+
+```shell
+make test
+make build
+```
+
+
 ### Step5. Development in new branch
+
+- sync with upstream
+After the test is completed, it is a good practice to keep your local in sync with upstream to avoid conflicts.
+
+```shell
+# Rebase your main branch of your local repo.
+git checkout main
+git rebase upstream/main  # if conflicted, solve it
+
+# Then make your development branch in sync with master branch
+git checkout new_feature
+git rebase -i main
+```
+
+- commit local changes
+
+```shell
+git add <file>
+git commit -s -m "some description of your changes"
+```
 
 ### Step6. Push to your fork
 
+```
+git push -f origin somefeature 
+```
+
 ### Step7. Create a PR
+
+- Visit your fork at https://github.com/$yourgitaccount/captain
+- Click the Compare & Pull Request button next to your myfeature branch.
+- Check out the pull request process for more details and advice.
