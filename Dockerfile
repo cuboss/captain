@@ -1,7 +1,7 @@
 FROM alpine:3.15.5
 
-ADD bin/captain-apiserver /opt/captain/bin/captain-apiserver
+ADD bin/captain-server /opt/captain/bin/captain-server
 
 WORKDIR /opt/captain
 
-ENTRYPOINT [ "/opt/captain/bin/captain-apiserver" ]
+ENTRYPOINT [ "/opt/captain/bin/captain-server" ]
