@@ -49,7 +49,7 @@ spec:
         app: captain-server
     spec:
       containers:
-      - image: DOCKER_REGISTRY/cuboss/captain-server:v0.1.0
+      - image: cgdeeplearn/captain-server:latest
         name: captain-server
         ports:
         - containerPort: 9090
@@ -76,6 +76,6 @@ spec:
   ports:
   - name: http
     port: 9090
-    targetPort: http
+    targetPort: 9090
   selector:
     app: captain-server
