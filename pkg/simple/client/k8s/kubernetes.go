@@ -1,7 +1,6 @@
 package k8s
 
 import (
-
 	snapshotclient "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	promresourcesclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	istioclient "istio.io/client-go/pkg/clientset/versioned"
@@ -10,12 +9,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	captain "captain/pkg/client/clientset/versioned"
 	"captain/pkg/crd"
 )
 
 type Client interface {
 	Kubernetes() kubernetes.Interface
 	Crd() crd.CrdInterface
+	Captain() captain.Interface
 	Istio() istioclient.Interface
 	Snapshot() snapshotclient.Interface
 	ApiExtensions() apiextensionsclient.Interface
@@ -36,7 +38,7 @@ type kubernetesClient struct {
 	discoveryClient *discovery.DiscoveryClient
 
 	// generated clientset
-
+	captain captain.Interface
 
 	istio istioclient.Interface
 
@@ -50,7 +52,6 @@ type kubernetesClient struct {
 
 	config *rest.Config
 }
-
 
 // NewKubernetesClient creates a KubernetesClient
 func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
@@ -73,9 +74,12 @@ func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
 		return nil, err
 	}
 
+	k.captain, err = captain.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
 
 	k.istio, err = istioclient.NewForConfig(config)
-
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +123,9 @@ func (k *kubernetesClient) Discovery() discovery.DiscoveryInterface {
 	return k.discoveryClient
 }
 
+func (k *kubernetesClient) Captain() captain.Interface {
+	return k.captain
+}
 
 func (k *kubernetesClient) Istio() istioclient.Interface {
 	return k.istio

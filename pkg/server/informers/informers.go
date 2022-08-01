@@ -1,12 +1,13 @@
 package informers
 
 import (
-	"captain/pkg/client/clientset/externalversions"
-	captaininformers "captain/pkg/client/informers/externalversions"
 	"time"
 
 	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+
+	"captain/pkg/client/clientset/versioned"
+	captaininformers "captain/pkg/client/informers/externalversions"
 )
 
 // default re-sync period for all informer factories
@@ -27,15 +28,15 @@ type informerFactories struct {
 	captainInformerFactory captaininformers.SharedInformerFactory
 }
 
-func NewInformerFactories(client kubernetes.Interface, ksClient externalversions.Interface) InformerFactory {
+func NewInformerFactories(client kubernetes.Interface, captainClient versioned.Interface) InformerFactory {
 	factory := &informerFactories{}
 
 	if client != nil {
 		factory.informerFactory = k8sinformers.NewSharedInformerFactory(client, defaultResync)
 	}
 
-	if ksClient != nil {
-		factory.captainInformerFactory = captaininformers.NewSharedInformerFactory(ksClient, defaultResync)
+	if captainClient != nil {
+		factory.captainInformerFactory = captaininformers.NewSharedInformerFactory(captainClient, defaultResync)
 	}
 
 	return factory

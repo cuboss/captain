@@ -33,7 +33,7 @@ limitations under the License.
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=cluster.kubesphere.io
+// +groupName=cluster.captain.io
 package v1alpha1
 
 import (
@@ -43,7 +43,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "cluster.kubesphere.io", Version: "v1alpha1"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "cluster.captain.io", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

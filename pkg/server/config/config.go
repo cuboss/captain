@@ -114,8 +114,9 @@ type Config struct {
 // newConfig creates a default non-empty Config
 func New() *Config {
 	return &Config{
-		KubernetesOptions: k8s.NewKubernetesOptions(),
-		RedisOptions:      cache.NewRedisOptions(),
+		KubernetesOptions:   k8s.NewKubernetesOptions(),
+		RedisOptions:        cache.NewRedisOptions(),
+		MultiClusterOptions: multicluster.NewOptions(),
 	}
 }
 
