@@ -17,7 +17,8 @@ import (
 	"k8s.io/klog"
 )
 
-const proxyURLFormat = "/api/v1/namespaces/captain-system/services/:captain-apiserver:/proxy%s"
+// const proxyURLFormat = "/api/v1/namespaces/captain-system/services/:captain-apiserver:/proxy%s"
+const proxyURLFormat = "%s"
 
 // Dispatcher defines how to forward request to designated cluster based on cluster name
 // This should only be used in host cluster when multicluster mode enabled, use in any other cases may cause
@@ -61,10 +62,10 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 		return
 	}
 
-	if !c.IsClusterReady(cluster) {
-		http.Error(w, fmt.Sprintf("cluster %s is not ready", cluster.Name), http.StatusBadRequest)
-		return
-	}
+	//if !c.IsClusterReady(cluster) {
+	//	http.Error(w, fmt.Sprintf("cluster %s is not ready", cluster.Name), http.StatusBadRequest)
+	//	return
+	//}
 
 	innCluster := c.GetInnerCluster(cluster.Name)
 	if innCluster == nil {
@@ -76,9 +77,10 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 
 	// change request host to actually cluster hosts
 	u := *req.URL
+	u.Path = strings.Replace(u.Path, fmt.Sprintf("/regions/%s", info.Region), "", 1)
 	u.Path = strings.Replace(u.Path, fmt.Sprintf("/clusters/%s", info.Cluster), "", 1)
 
-	// if cluster connection is direct and kubesphere apiserver endpoint is empty
+	// if cluster connection is direct and capatin apiserver endpoint is empty
 	// we use kube-apiserver proxy way
 	if cluster.Spec.Connection.Type == clusterv1alpha1.ConnectionTypeDirect &&
 		len(cluster.Spec.Connection.CaptainAPIEndpoint) == 0 {
@@ -91,14 +93,14 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 		// The reason we need this is kube-apiserver doesn't behave like a standard proxy, it will strip
 		// authorization header of proxy requests. Use custom header to avoid stripping by kube-apiserver.
 		// https://github.com/kubernetes/kubernetes/issues/38775#issuecomment-277915961
-		// We first copy req.Header['Authorization'] to req.Header['X-KubeSphere-Authorization'] before sending
-		// designated cluster kube-apiserver, then copy req.Header['X-KubeSphere-Authorization'] to
+		// We first copy req.Header['Authorization'] to req.Header['X-Captain-Authorization'] before sending
+		// designated cluster kube-apiserver, then copy req.Header['X-Captain-Authorization'] to
 		// req.Header['Authorization'] before authentication.
-		req.Header.Set("X-KubeSphere-Authorization", req.Header.Get("Authorization"))
+		req.Header.Set("X-Captain-Authorization", req.Header.Get("Authorization"))
 
 		// If cluster kubeconfig using token authentication, transport will not override authorization header,
-		// this will cause requests reject by kube-apiserver since kubesphere authorization header is not
-		// acceptable. Delete this header is safe since we are using X-KubeSphere-Authorization.
+		// this will cause requests reject by kube-apiserver since Captain authorization header is not
+		// acceptable. Delete this header is safe since we are using X-Captain-Authorization.
 		// https://github.com/kubernetes/client-go/blob/master/transport/round_trippers.go#L285
 		req.Header.Del("Authorization")
 
@@ -115,10 +117,10 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 		// PR aim to fix this, but it's unlikely it will get merged soon. So here we are again. Put raw query
 		// string in Header and extract it on member cluster.
 		if httpstream.IsUpgradeRequest(req) && len(req.URL.RawQuery) != 0 {
-			req.Header.Set("X-KubeSphere-Rawquery", req.URL.RawQuery)
+			req.Header.Set("X-Captain-Rawquery", req.URL.RawQuery)
 		}
 	} else {
-		// everything else goes to ks-apiserver, since our ks-apiserver has the ability to proxy kube-apiserver requests
+		// everything else goes to captain-apiserver, since our captain-apiserver has the ability to proxy kube-apiserver requests
 
 		u.Host = innCluster.CaptainURL.Host
 		u.Scheme = innCluster.CaptainURL.Scheme
