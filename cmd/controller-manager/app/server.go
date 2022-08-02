@@ -11,13 +11,11 @@ import (
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/term"
 	"k8s.io/klog"
-	"k8s.io/klog/klogr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-	"sigs.k8s.io/kubefed/pkg/apis"
 
 	"captain/cmd/controller-manager/app/options"
+	"captain/pkg/apis"
 	controllerconfig "captain/pkg/server/config"
 	"captain/pkg/server/informers"
 	"captain/pkg/simple/client/k8s"
@@ -32,6 +30,9 @@ func NewControllerManagerCommand() *cobra.Command {
 		s = &options.CaptainControllerManagerOptions{
 			KubernetesOptions:   conf.KubernetesOptions,
 			MultiClusterOptions: conf.MultiClusterOptions,
+			LeaderElection:      s.LeaderElection,
+			LeaderElect:         s.LeaderElect,
+			WebhookCertDir:      s.WebhookCertDir,
 		}
 	} else {
 		klog.Fatal("Failed to load configuration from disk", err)
@@ -113,7 +114,10 @@ func run(s *options.CaptainControllerManagerOptions, ctx context.Context) error 
 	}
 
 	klog.V(0).Info("setting up manager")
-	ctrl.SetLogger(klogr.New())
+
+	// TODO
+	//ctrl.SetLogger(klogr.New().V(0))
+
 	// Use 8443 instead of 443 cause we need root permission to bind port 443
 	mgr, err := manager.New(kubernetesClient.Config(), mgrOptions)
 	if err != nil {
