@@ -5,12 +5,14 @@ import (
 	"captain/pkg/simple/client/k8s"
 	"flag"
 	"fmt"
-	"k8s.io/klog"
 	"net/http"
 	"strings"
 
+	"k8s.io/klog"
+
 	captainserverconfig "captain/pkg/server/config"
 	genericoptions "captain/pkg/simple/server/options"
+
 	cliflag "k8s.io/component-base/cli/flag"
 )
 
@@ -40,7 +42,6 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 
 	s.RedisOptions.AddFlags(fss.FlagSet("redis"), s.RedisOptions)
 
-
 	fs = fss.FlagSet("klog")
 	local := flag.NewFlagSet("klog", flag.ExitOnError)
 	klog.InitFlags(local)
@@ -52,9 +53,9 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 	return fss
 }
 
-func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.APIServer, error) {
-	apiServer := &server.APIServer{
-		Config:     s.Config,
+func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.CaptainAPIServer, error) {
+	apiServer := &server.CaptainAPIServer{
+		Config: s.Config,
 	}
 
 	kubernetesClient, err := k8s.NewKubernetesClient(s.KubernetesOptions)

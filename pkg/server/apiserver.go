@@ -2,21 +2,22 @@ package server
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/emicklei/go-restful"
+	urlruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog"
-	"net/http"
-    urlruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	captainserverconfig "captain/pkg/server/config"
-	"captain/pkg/simple/client/k8s"
 	"captain/pkg/capis/version"
+	captainserverconfig "captain/pkg/server/config"
 	"captain/pkg/server/filters"
 	"captain/pkg/server/request"
+	"captain/pkg/simple/client/k8s"
 )
 
-type APIServer struct {
+type CaptainAPIServer struct {
 	ServerCount int
 
 	Server *http.Server
@@ -36,7 +37,7 @@ func (e *errorResponder) Error(w http.ResponseWriter, req *http.Request, err err
 	responsewriters.InternalError(w, req, err)
 }
 
-func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
+func (s *CaptainAPIServer) PrepareRun(stopCh <-chan struct{}) error {
 	s.container = restful.NewContainer()
 	//s.container.Filter(logRequestAndResponse)
 	// 设定路由为CurlyRouter(快速路由)
@@ -68,14 +69,14 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 // Install all captain api groups
 // Installation happens before all informers start to cache objects, so
 //   any attempt to list objects using listers will get empty results.
-func (s *APIServer) installCaptainAPIs() {
+func (s *CaptainAPIServer) installCaptainAPIs() {
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
 }
 
 //通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
-func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
+func (s *CaptainAPIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	requestInfoResolver := &request.RequestInfoFactory{
-		APIPrefixes:          sets.NewString("api", "apis"),
+		APIPrefixes: sets.NewString("api", "apis"),
 	}
 
 	handler := s.Server.Handler
@@ -86,7 +87,7 @@ func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	s.Server.Handler = handler
 }
 
-func (s *APIServer) Run(ctx context.Context) (err error) {
+func (s *CaptainAPIServer) Run(ctx context.Context) (err error) {
 
 	shutdownCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -105,4 +106,3 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 
 	return err
 }
-

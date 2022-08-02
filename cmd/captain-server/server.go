@@ -4,16 +4,17 @@ import (
 	"captain/pkg/version"
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/spf13/cobra"
-	cliflag "k8s.io/component-base/cli/flag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/term"
 	"k8s.io/klog"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	captainserverconfig "captain/pkg/server/config"
 	"captain/cmd/captain-server/options"
+	captainserverconfig "captain/pkg/server/config"
 )
 
 func NewAPIServerCommand() *cobra.Command {
