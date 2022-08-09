@@ -28,7 +28,7 @@ func addControllers(
 			client.Kubernetes(),
 			client.Config(),
 			captainInformer.Cluster().V1alpha1().Clusters(),
-			client.Captain().ClusterV1alpha1().Clusters(),
+			client.Crd().V1beta1().Clusters(),
 			multiClusterOptions.ClusterControllerResyncPeriod,
 			multiClusterOptions.HostClusterName)
 	}

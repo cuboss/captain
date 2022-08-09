@@ -6,8 +6,8 @@ import (
 	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 
-	"captain/pkg/client/clientset/versioned"
-	captaininformers "captain/pkg/client/informers/externalversions"
+	"captain/pkg/client/informers/externalversions"
+	"captain/pkg/crd"
 )
 
 // default re-sync period for all informer factories
@@ -17,26 +17,26 @@ const defaultResync = 600 * time.Second
 // callers should check if the return value is nil
 type InformerFactory interface {
 	KubernetesSharedInformerFactory() k8sinformers.SharedInformerFactory
-	CaptainSharedInformerFactory() captaininformers.SharedInformerFactory
+	CaptainSharedInformerFactory() externalversions.SharedInformerFactory
 
 	// Start shared informer factory one by one if they are not nil
 	Start(stopCh <-chan struct{})
 }
 
 type informerFactories struct {
-	informerFactory        k8sinformers.SharedInformerFactory
-	captainInformerFactory captaininformers.SharedInformerFactory
+	informerFactory k8sinformers.SharedInformerFactory
+	captainFactory  externalversions.SharedInformerFactory
 }
 
-func NewInformerFactories(client kubernetes.Interface, captainClient versioned.Interface) InformerFactory {
+func NewInformerFactories(client kubernetes.Interface, crdClient crd.CrdInterface) InformerFactory {
 	factory := &informerFactories{}
 
 	if client != nil {
 		factory.informerFactory = k8sinformers.NewSharedInformerFactory(client, defaultResync)
 	}
 
-	if captainClient != nil {
-		factory.captainInformerFactory = captaininformers.NewSharedInformerFactory(captainClient, defaultResync)
+	if crdClient != nil {
+		factory.captainFactory = externalversions.NewSharedInformerFactory(crdClient.Versioned(), defaultResync)
 	}
 
 	return factory
@@ -46,8 +46,8 @@ func (f *informerFactories) KubernetesSharedInformerFactory() k8sinformers.Share
 	return f.informerFactory
 }
 
-func (f *informerFactories) CaptainSharedInformerFactory() captaininformers.SharedInformerFactory {
-	return f.captainInformerFactory
+func (f *informerFactories) CaptainSharedInformerFactory() externalversions.SharedInformerFactory {
+	return f.captainFactory
 }
 
 func (f *informerFactories) Start(stopCh <-chan struct{}) {
@@ -55,7 +55,7 @@ func (f *informerFactories) Start(stopCh <-chan struct{}) {
 		f.informerFactory.Start(stopCh)
 	}
 
-	if f.captainInformerFactory != nil {
-		f.captainInformerFactory.Start(stopCh)
+	if f.captainFactory != nil {
+		f.captainFactory.Start(stopCh)
 	}
 }

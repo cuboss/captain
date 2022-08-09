@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
@@ -92,7 +91,6 @@ func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	handler = filters.WithKubeAPIServer(handler, s.KubernetesClient.Config(), &errorResponder{})
 
 	if s.Config.MultiClusterOptions.Enable {
-		fmt.Println(s.Config.MultiClusterOptions)
 		clusterDispatcher := dispatch.NewClusterDispatch(s.InformerFactory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters())
 		handler = filters.WithMultipleClusterDispatcher(handler, clusterDispatcher)
 	}
@@ -126,25 +124,25 @@ func (s *APIServer) waitForResourceSync(ctx context.Context) error {
 		return false
 	}
 
-	captainInformerFactory := s.InformerFactory.CaptainSharedInformerFactory()
+	crdInformerFactory := s.InformerFactory.CaptainSharedInformerFactory()
 
 	captainGVRs := []schema.GroupVersionResource{
-		{Group: "cluster.captain.io", Version: "v1alpha1", Resource: "clusters"},
+		{Group: "cluster.captain.io", Version: "v1beta1", Resource: "clusters"},
 	}
 
 	for _, gvr := range captainGVRs {
 		if !isResourceExists(gvr) {
 			klog.Warningf("resource %s not exists in the cluster", gvr)
 		} else {
-			_, err = captainInformerFactory.ForResource(gvr)
+			_, err = crdInformerFactory.ForResource(gvr)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	captainInformerFactory.Start(stopCh)
-	captainInformerFactory.WaitForCacheSync(stopCh)
+	crdInformerFactory.Start(stopCh)
+	crdInformerFactory.WaitForCacheSync(stopCh)
 
 	klog.V(0).Info("Finished caching objects")
 

@@ -1,4 +1,3 @@
-
 package request
 
 import (
@@ -125,7 +124,7 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 		},
 		{
 			name:                      "list clusters",
-			url:                       "/apis/cluster.captain.io/v1alpha1/clusters",
+			url:                       "/apis/cluster.captain.io/v1beta1/clusters",
 			method:                    http.MethodGet,
 			expectedErr:               nil,
 			expectedVerb:              "list",
@@ -137,7 +136,7 @@ func TestRequestInfoFactory_NewRequestInfo(t *testing.T) {
 		},
 		{
 			name:                      "get cluster gondor",
-			url:                       "/apis/cluster.captain.io/v1alpha1/clusters/gondor",
+			url:                       "/apis/cluster.captain.io/v1beta1/clusters/gondor",
 			method:                    http.MethodGet,
 			expectedErr:               nil,
 			expectedVerb:              "get",

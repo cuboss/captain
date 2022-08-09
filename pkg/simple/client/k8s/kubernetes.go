@@ -10,14 +10,12 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	captain "captain/pkg/client/clientset/versioned"
 	"captain/pkg/crd"
 )
 
 type Client interface {
 	Kubernetes() kubernetes.Interface
 	Crd() crd.CrdInterface
-	Captain() captain.Interface
 	Istio() istioclient.Interface
 	Snapshot() snapshotclient.Interface
 	ApiExtensions() apiextensionsclient.Interface
@@ -36,9 +34,6 @@ type kubernetesClient struct {
 
 	// discovery client
 	discoveryClient *discovery.DiscoveryClient
-
-	// generated clientset
-	captain captain.Interface
 
 	istio istioclient.Interface
 
@@ -70,11 +65,6 @@ func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
 	}
 
 	k.discoveryClient, err = discovery.NewDiscoveryClientForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	k.captain, err = captain.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -121,10 +111,6 @@ func (k *kubernetesClient) Crd() crd.CrdInterface {
 
 func (k *kubernetesClient) Discovery() discovery.DiscoveryInterface {
 	return k.discoveryClient
-}
-
-func (k *kubernetesClient) Captain() captain.Interface {
-	return k.captain
 }
 
 func (k *kubernetesClient) Istio() istioclient.Interface {

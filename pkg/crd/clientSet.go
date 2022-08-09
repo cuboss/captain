@@ -1,8 +1,9 @@
 package crd
 
 import (
+	"captain/pkg/client/clientset/versioned"
 	"captain/pkg/crd/v1beta1"
-	gaia2 "captain/pkg/crd/v1beta1/gaia"
+
 	"k8s.io/client-go/rest"
 )
 
@@ -12,6 +13,7 @@ import (
 // 		call as:  CrdClientSet.GaiaClusters.Create(...)...
 type CrdInterface interface {
 	V1beta1() v1beta1.V1beta1Interface
+	Versioned() versioned.Interface
 	// todo list
 	// crd interface
 }
@@ -23,10 +25,15 @@ type CrdController struct {
 	v1beta1 *v1beta1.V1beta1Client
 	// todo list
 	// crd client
+	versioned *versioned.Clientset
 }
 
 func (c *CrdController) V1beta1() v1beta1.V1beta1Interface {
 	return c.v1beta1
+}
+
+func (c *CrdController) Versioned() versioned.Interface {
+	return c.versioned
 }
 
 func NewForConfig(c *rest.Config) (CrdInterface, error) {
@@ -35,30 +42,22 @@ func NewForConfig(c *rest.Config) (CrdInterface, error) {
 	if configShallowCopy.UserAgent == "" {
 		configShallowCopy.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
-	controller := &CrdController{
-	}
-	// v1beta1
-	v1beta1Resource, err := v1beta1.NewV1beta1Config(c)
+	controller := &CrdController{}
+
+	// versioned
+	versionedResource, err := versioned.NewForConfig(c)
 	if err != nil {
 		return nil, err
 	}
+	controller.versioned = versionedResource
 
+	// v1beta1
+	v1beta1Resource, err := v1beta1.NewV1beta1Config(c, versionedResource)
+	if err != nil {
+		return nil, err
+	}
 	controller.v1beta1 = v1beta1Resource
-    // todo list
+
+	// todo list
 	return controller, nil
-}
-
-
-func (c *CrdController) GaiaClusters(namespace string) gaia2.GaiaClusterClient {
-	return c.v1beta1.GaiaCluster(namespace)
-}
-
-// ClusterSets 获取ClusterSet Client
-func (c *CrdController) GaiaNodes(namespace string) gaia2.GaiaNodeClient {
-	return c.v1beta1.GaiaNode(namespace)
-}
-
-// ClusterSets 获取ClusterSet Client
-func (c *CrdController) GaiaSets(namespace string) gaia2.GaiaSetClient {
-	return c.v1beta1.GaiaSet(namespace)
 }

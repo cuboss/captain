@@ -65,7 +65,7 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.APIServ
 	}
 	apiServer.KubernetesClient = kubernetesClient
 
-	informerFactory := informers.NewInformerFactories(kubernetesClient.Kubernetes(), kubernetesClient.Captain())
+	informerFactory := informers.NewInformerFactories(kubernetesClient.Kubernetes(), kubernetesClient.Crd())
 	apiServer.InformerFactory = informerFactory
 
 	captainServer := &http.Server{

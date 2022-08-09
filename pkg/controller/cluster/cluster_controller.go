@@ -77,7 +77,7 @@ var hostCluster = &clusterv1alpha1.Cluster{
 		},
 		Labels: map[string]string{
 			clusterv1alpha1.HostCluster: "",
-			captainManaged:              "true",
+			captainManaged:             "true",
 		},
 	},
 	Spec: clusterv1alpha1.ClusterSpec{
@@ -175,7 +175,6 @@ func NewClusterController(
 }
 
 func (c *clusterController) Start(ctx context.Context) error {
-	fmt.Println("Started")
 	return c.Run(3, ctx.Done())
 }
 
@@ -388,7 +387,7 @@ func (c *clusterController) probeClusters() error {
 func (c *clusterController) syncCluster(key string) error {
 	klog.V(5).Infof("starting to sync cluster %s", key)
 	startTime := time.Now()
-	fmt.Println(key)
+
 	_, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		klog.Errorf("not a valid controller key %s, %#v", key, err)

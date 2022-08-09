@@ -92,7 +92,7 @@ func run(s *options.CaptainControllerManagerOptions, ctx context.Context) error 
 
 	informerFactory := informers.NewInformerFactories(
 		kubernetesClient.Kubernetes(),
-		kubernetesClient.Captain(),
+		kubernetesClient.Crd(),
 	)
 
 	mgrOptions := manager.Options{
