@@ -1,16 +1,19 @@
 package options
 
 import (
-	"captain/pkg/server"
-	"captain/pkg/simple/client/k8s"
 	"flag"
 	"fmt"
-	"k8s.io/klog"
 	"net/http"
 	"strings"
 
+	"k8s.io/klog"
+
+	"captain/pkg/server"
 	captainserverconfig "captain/pkg/server/config"
+	"captain/pkg/server/informers"
+	"captain/pkg/simple/client/k8s"
 	genericoptions "captain/pkg/simple/server/options"
+
 	cliflag "k8s.io/component-base/cli/flag"
 )
 
@@ -40,7 +43,6 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 
 	s.RedisOptions.AddFlags(fss.FlagSet("redis"), s.RedisOptions)
 
-
 	fs = fss.FlagSet("klog")
 	local := flag.NewFlagSet("klog", flag.ExitOnError)
 	klog.InitFlags(local)
@@ -54,7 +56,7 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 
 func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.APIServer, error) {
 	apiServer := &server.APIServer{
-		Config:     s.Config,
+		Config: s.Config,
 	}
 
 	kubernetesClient, err := k8s.NewKubernetesClient(s.KubernetesOptions)
@@ -62,6 +64,9 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.APIServ
 		return nil, err
 	}
 	apiServer.KubernetesClient = kubernetesClient
+
+	informerFactory := informers.NewInformerFactories(kubernetesClient.Kubernetes(), kubernetesClient.Crd())
+	apiServer.InformerFactory = informerFactory
 
 	captainServer := &http.Server{
 		Addr: fmt.Sprintf(":%d", s.GenericServerRunOptions.InsecurePort),

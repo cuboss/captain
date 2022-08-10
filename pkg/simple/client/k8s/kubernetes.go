@@ -1,7 +1,6 @@
 package k8s
 
 import (
-
 	snapshotclient "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	promresourcesclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	istioclient "istio.io/client-go/pkg/clientset/versioned"
@@ -10,6 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
 	"captain/pkg/crd"
 )
 
@@ -35,9 +35,6 @@ type kubernetesClient struct {
 	// discovery client
 	discoveryClient *discovery.DiscoveryClient
 
-	// generated clientset
-
-
 	istio istioclient.Interface
 
 	snapshot snapshotclient.Interface
@@ -50,7 +47,6 @@ type kubernetesClient struct {
 
 	config *rest.Config
 }
-
 
 // NewKubernetesClient creates a KubernetesClient
 func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
@@ -73,9 +69,7 @@ func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
 		return nil, err
 	}
 
-
 	k.istio, err = istioclient.NewForConfig(config)
-
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +112,6 @@ func (k *kubernetesClient) Crd() crd.CrdInterface {
 func (k *kubernetesClient) Discovery() discovery.DiscoveryInterface {
 	return k.discoveryClient
 }
-
 
 func (k *kubernetesClient) Istio() istioclient.Interface {
 	return k.istio

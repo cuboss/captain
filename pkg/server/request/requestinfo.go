@@ -138,6 +138,9 @@ func (r *RequestInfoFactory) NewRequestInfo(req *http.Request) (*RequestInfo, er
 		return &requestInfo, nil
 	}
 
+	// URL forms: /regions/{region}/clusters/{cluster}/capis/
+	currentParts = tryFetchRegionAndClusterInfo(currentParts, &requestInfo)
+
 	if !r.APIPrefixes.Has(currentParts[0]) {
 		// return a non-resource request
 		return &requestInfo, nil
@@ -145,23 +148,8 @@ func (r *RequestInfoFactory) NewRequestInfo(req *http.Request) (*RequestInfo, er
 	requestInfo.APIPrefix = currentParts[0]
 	currentParts = currentParts[1:]
 
-	// URL forms: /regions/{region}/clusters/{cluster}/*
-	if currentParts[0] == "regions" {
-		if len(currentParts) > 1 {
-			requestInfo.Region = currentParts[1]
-		}
-		if len(currentParts) > 2 {
-			currentParts = currentParts[2:]
-		}
-	}
-	if currentParts[0] == "clusters" {
-		if len(currentParts) > 1 {
-			requestInfo.Cluster = currentParts[1]
-		}
-		if len(currentParts) > 2 {
-			currentParts = currentParts[2:]
-		}
-	}
+	// URL forms: /capis/regions/{region}/clusters/{cluster}/*
+	currentParts = tryFetchRegionAndClusterInfo(currentParts, &requestInfo)
 
 	if !r.GrouplessAPIPrefixes.Has(requestInfo.APIPrefix) {
 		// one part (APIPrefix) has already been consumed, so this is actually "do we have four parts?"
@@ -304,6 +292,26 @@ func (r *RequestInfoFactory) NewRequestInfo(req *http.Request) (*RequestInfo, er
 	}
 
 	return &requestInfo, nil
+}
+
+func tryFetchRegionAndClusterInfo(currentParts []string, requestInfo *RequestInfo) []string {
+	if currentParts[0] == "regions" {
+		if len(currentParts) > 1 {
+			requestInfo.Region = currentParts[1]
+		}
+		if len(currentParts) > 2 {
+			currentParts = currentParts[2:]
+		}
+	}
+	if currentParts[0] == "clusters" {
+		if len(currentParts) > 1 {
+			requestInfo.Cluster = currentParts[1]
+		}
+		if len(currentParts) > 2 {
+			currentParts = currentParts[2:]
+		}
+	}
+	return currentParts
 }
 
 type requestInfoKeyType int
