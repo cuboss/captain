@@ -3,7 +3,8 @@ module captain
 go 1.17
 
 require (
-	github.com/emicklei/go-restful v2.9.5+incompatible
+	github.com/emicklei/go-restful v2.9.6+incompatible
+	github.com/emicklei/go-restful-openapi v1.4.1
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/google/go-cmp v0.5.5
@@ -37,6 +38,7 @@ require (
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
+	github.com/go-openapi/spec v0.19.3 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect

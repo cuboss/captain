@@ -1,6 +1,8 @@
 package server
 
 import (
+	"captain/pkg/capis/crd"
+	"captain/pkg/controller/crd_controller"
 	"context"
 	"net/http"
 
@@ -71,6 +73,8 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 	// handle chain
 	s.buildHandlerChain(stopCh)
 
+	crd_controller.GetKubernetesClient(s.KubernetesClient)
+
 	return nil
 }
 
@@ -78,7 +82,8 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 // Installation happens before all informers start to cache objects, so
 //   any attempt to list objects using listers will get empty results.
 func (s *APIServer) installCaptainAPIs() {
-	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
+	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery(), s.KubernetesClient.Kubernetes()))
+	urlruntime.Must(crd.AddToContainer(s.container, s.KubernetesClient.Kubernetes()))
 }
 
 //通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
