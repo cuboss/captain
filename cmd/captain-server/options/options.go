@@ -1,6 +1,7 @@
 package options
 
 import (
+	"captain/pkg/informers"
 	"captain/pkg/server"
 	"captain/pkg/simple/client/k8s"
 	"flag"
@@ -63,6 +64,9 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.Captain
 		return nil, err
 	}
 	apiServer.KubernetesClient = kubernetesClient
+
+	informerFac := informers.NewInformerFactories(kubernetesClient.Kubernetes())
+	apiServer.InformerFactory = informerFac
 
 	captainServer := &http.Server{
 		Addr: fmt.Sprintf(":%d", s.GenericServerRunOptions.InsecurePort),
