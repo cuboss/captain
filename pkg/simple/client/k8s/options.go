@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"k8s.io/client-go/util/homedir"
+	"k8s.io/klog"
 
 	"github.com/spf13/pflag"
 
@@ -48,6 +49,7 @@ func NewKubernetesOptions() (option *KubernetesOptions) {
 	}
 
 	userHomeConfig := path.Join(homePath, ".kube/config")
+	klog.V(2).Infof("user kube config file : %s", userHomeConfig)
 	if _, err := os.Stat(userHomeConfig); err == nil {
 		option.KubeConfig = userHomeConfig
 	}
