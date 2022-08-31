@@ -1,20 +1,19 @@
 package options
 
 import (
+	"captain/pkg/server"
 	"flag"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"k8s.io/klog"
-
-	"captain/pkg/server"
 	captainserverconfig "captain/pkg/server/config"
 	"captain/pkg/server/informers"
 	"captain/pkg/simple/client/k8s"
 	genericoptions "captain/pkg/simple/server/options"
 
 	cliflag "k8s.io/component-base/cli/flag"
+	"k8s.io/klog"
 )
 
 type ServerRunOptions struct {
@@ -54,8 +53,8 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 	return fss
 }
 
-func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.APIServer, error) {
-	apiServer := &server.APIServer{
+func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.CaptainAPIServer, error) {
+	apiServer := &server.CaptainAPIServer{
 		Config: s.Config,
 	}
 
