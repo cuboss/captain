@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"captain/pkg/capis/version"
 	"captain/pkg/informers"
@@ -131,6 +130,23 @@ func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 
 	crdInformerFactory := s.InformerFactory.CaptainSharedInformerFactory()
 
+	//caching kubernetes native resources
+	kubeGVRs := []schema.GroupVersionResource{
+		{Group: "apps", Version: "v1", Resource: "deployments"},
+	}
+	for _, gvr := range kubeGVRs {
+		if !isResourceExists(gvr) {
+			klog.Warning("resource %s not exists in the cluster", gvr.String())
+		} else {
+			_, err = s.InformerFactory.KubernetesSharedInformerFactory().ForResource(gvr)
+			if err != nil {
+				klog.Errorf("can not make informer for resource - %s ", gvr.String())
+			}
+		}
+	}
+	s.InformerFactory.KubernetesSharedInformerFactory().Start(stopCh)
+
+	// caching other crds
 	captainGVRs := []schema.GroupVersionResource{
 		{Group: "cluster.captain.io", Version: "v1beta1", Resource: "clusters"},
 	}
@@ -178,45 +194,5 @@ func (s *CaptainAPIServer) Run(ctx context.Context) (err error) {
 		err = s.Server.ListenAndServe()
 	}
 
-	klog.V(0).Info("starting caching objects")
-
-	stopCh := ctx.Done()
-	discoveryCli := s.KubernetesClient.Kubernetes().Discovery()
-
-	_, fullResourcesList, err := discoveryCli.ServerGroupsAndResources()
-	if err != nil {
-		return err
-	}
-
-	isResourceValid := func(gvr schema.GroupVersionResource) bool {
-		for _, resource := range fullResourcesList {
-			if resource.GroupVersion == gvr.GroupVersion().String() {
-				for _, gr := range resource.APIResources {
-					if strings.Compare(gr.Name, gvr.Resource) == 0 {
-						return true
-					}
-				}
-			}
-		}
-		return false
-	}
-
-	supportedKubeGVRs := []schema.GroupVersionResource{
-		{Group: "apps", Version: "v1", Resource: "deployments"},
-	}
-
-	//prepare informer for caching
-	for _, support := range supportedKubeGVRs {
-		if !isResourceValid(support) {
-			klog.Warningf("resources %s was not supported in this cluster")
-		} else {
-			_, err := s.InformerFactory.KubernetesSharedInformerFactory().ForResource(support)
-			if err != nil {
-				klog.Errorf("can not make informer for resource - %s ", support.String())
-			}
-		}
-	}
-	s.InformerFactory.KubernetesSharedInformerFactory().Start(stopCh)
-
-	return nil
+	return err
 }
