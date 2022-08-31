@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"strings"
 
+	"k8s.io/klog"
+
+	"captain/pkg/informers"
 	captainserverconfig "captain/pkg/server/config"
-	"captain/pkg/server/informers"
 	"captain/pkg/simple/client/k8s"
 	genericoptions "captain/pkg/simple/server/options"
 
 	cliflag "k8s.io/component-base/cli/flag"
-	"k8s.io/klog"
 )
 
 type ServerRunOptions struct {

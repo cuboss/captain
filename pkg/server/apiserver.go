@@ -3,6 +3,16 @@ package server
 import (
 	"context"
 	"net/http"
+	"strings"
+
+	"captain/pkg/capis/version"
+	"captain/pkg/informers"
+	captainserverconfig "captain/pkg/server/config"
+	"captain/pkg/server/dispatch"
+	"captain/pkg/server/filters"
+	"captain/pkg/server/request"
+	resAlpha1 "captain/pkg/server/resources/alpha1"
+	"captain/pkg/simple/client/k8s"
 
 	"github.com/emicklei/go-restful"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -10,14 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog"
-
-	"captain/pkg/capis/version"
-	captainserverconfig "captain/pkg/server/config"
-	"captain/pkg/server/dispatch"
-	"captain/pkg/server/filters"
-	"captain/pkg/server/informers"
-	"captain/pkg/server/request"
-	"captain/pkg/simple/client/k8s"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 )
 
 type CaptainAPIServer struct {
@@ -35,7 +38,10 @@ type CaptainAPIServer struct {
 
 	// informerFactory is a collection of all kubernetes(include CRDs) objects informers,
 	// mainly for fast query
-	InformerFactory informers.InformerFactory
+	InformerFactory informers.CapInformerFactory
+
+	// controller-runtime client
+	KubeRuntimeCache cache.Cache
 }
 
 type errorResponder struct{}
@@ -48,23 +54,18 @@ func (e *errorResponder) Error(w http.ResponseWriter, req *http.Request, err err
 func (s *CaptainAPIServer) PrepareRun(stopCh <-chan struct{}) error {
 	s.container = restful.NewContainer()
 	//s.container.Filter(logRequestAndResponse)
-	// 设定路由为CurlyRouter(快速路由)
 	s.container.Router(restful.CurlyRouter{})
 	//s.container.RecoverHandler(func(panicReason interface{}, httpWriter http.ResponseWriter) {
 	//	logStackOnRecover(panicReason, httpWriter)
 	//})
 
-	// install apis for native resources
+	// install apis
 	s.installCaptainAPIs()
-	//s.installCRDAPIs()
-	//s.installMetricsAPI()
-	//s.container.Filter(monitorRequest)
 
 	for _, ws := range s.container.RegisteredWebServices() {
 		klog.V(2).Infof("%s", ws.RootPath())
 	}
 
-	// container 作为http server 的handler
 	s.Server.Handler = s.container
 
 	// handle chain
@@ -77,7 +78,12 @@ func (s *CaptainAPIServer) PrepareRun(stopCh <-chan struct{}) error {
 // Installation happens before all informers start to cache objects, so
 //   any attempt to list objects using listers will get empty results.
 func (s *CaptainAPIServer) installCaptainAPIs() {
+	// nataive apis of kubernetes
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
+
+	// captain apis for kube resources
+	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache))
+
 }
 
 //通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
@@ -162,6 +168,9 @@ func (s *CaptainAPIServer) Run(ctx context.Context) (err error) {
 		_ = s.Server.Shutdown(shutdownCtx)
 	}()
 
+	// Caching resources
+	// informersFactory := informers.NewInformerFactories(kubeClient)
+
 	klog.V(0).Infof("Start listening on %s", s.Server.Addr)
 	if s.Server.TLSConfig != nil {
 		err = s.Server.ListenAndServeTLS("", "")
@@ -169,5 +178,45 @@ func (s *CaptainAPIServer) Run(ctx context.Context) (err error) {
 		err = s.Server.ListenAndServe()
 	}
 
-	return err
+	klog.V(0).Info("starting caching objects")
+
+	stopCh := ctx.Done()
+	discoveryCli := s.KubernetesClient.Kubernetes().Discovery()
+
+	_, fullResourcesList, err := discoveryCli.ServerGroupsAndResources()
+	if err != nil {
+		return err
+	}
+
+	isResourceValid := func(gvr schema.GroupVersionResource) bool {
+		for _, resource := range fullResourcesList {
+			if resource.GroupVersion == gvr.GroupVersion().String() {
+				for _, gr := range resource.APIResources {
+					if strings.Compare(gr.Name, gvr.Resource) == 0 {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}
+
+	supportedKubeGVRs := []schema.GroupVersionResource{
+		{Group: "apps", Version: "v1", Resource: "deployments"},
+	}
+
+	//prepare informer for caching
+	for _, support := range supportedKubeGVRs {
+		if !isResourceValid(support) {
+			klog.Warningf("resources %s was not supported in this cluster")
+		} else {
+			_, err := s.InformerFactory.KubernetesSharedInformerFactory().ForResource(support)
+			if err != nil {
+				klog.Errorf("can not make informer for resource - %s ", support.String())
+			}
+		}
+	}
+	s.InformerFactory.KubernetesSharedInformerFactory().Start(stopCh)
+
+	return nil
 }
