@@ -136,7 +136,7 @@ func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 	}
 	for _, gvr := range kubeGVRs {
 		if !isResourceExists(gvr) {
-			klog.Warning("resource %s not exists in the cluster", gvr.String())
+			klog.Warningf("resource %s not exists in the cluster", gvr.String())
 		} else {
 			_, err = s.InformerFactory.KubernetesSharedInformerFactory().ForResource(gvr)
 			if err != nil {
