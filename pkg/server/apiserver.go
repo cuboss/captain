@@ -4,23 +4,25 @@ import (
 	"context"
 	"net/http"
 
+	"captain/pkg/capis/version"
+	"captain/pkg/informers"
+	captainserverconfig "captain/pkg/server/config"
+	"captain/pkg/server/dispatch"
+	"captain/pkg/server/filters"
+	"captain/pkg/server/request"
+	resAlpha1 "captain/pkg/server/resources/alpha1"
+	"captain/pkg/simple/client/k8s"
+
 	"github.com/emicklei/go-restful"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	urlruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog"
-
-	"captain/pkg/capis/version"
-	captainserverconfig "captain/pkg/server/config"
-	"captain/pkg/server/dispatch"
-	"captain/pkg/server/filters"
-	"captain/pkg/server/informers"
-	"captain/pkg/server/request"
-	"captain/pkg/simple/client/k8s"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 )
 
-type APIServer struct {
+type CaptainAPIServer struct {
 	ServerCount int
 
 	Server *http.Server
@@ -35,7 +37,10 @@ type APIServer struct {
 
 	// informerFactory is a collection of all kubernetes(include CRDs) objects informers,
 	// mainly for fast query
-	InformerFactory informers.InformerFactory
+	InformerFactory informers.CapInformerFactory
+
+	// controller-runtime client
+	KubeRuntimeCache cache.Cache
 }
 
 type errorResponder struct{}
@@ -45,29 +50,23 @@ func (e *errorResponder) Error(w http.ResponseWriter, req *http.Request, err err
 	responsewriters.InternalError(w, req, err)
 }
 
-func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
+func (s *CaptainAPIServer) PrepareRun(stopCh <-chan struct{}) error {
 	s.container = restful.NewContainer()
 	//s.container.Filter(logRequestAndResponse)
-	// 设定路由为CurlyRouter(快速路由)
 	s.container.Router(restful.CurlyRouter{})
 	//s.container.RecoverHandler(func(panicReason interface{}, httpWriter http.ResponseWriter) {
 	//	logStackOnRecover(panicReason, httpWriter)
 	//})
 
-	//s.installKubeSphereAPIs(stopCh)
-	//s.installCRDAPIs()
-	//s.installMetricsAPI()
-	//s.container.Filter(monitorRequest)
+	// install apis
+	s.installCaptainAPIs()
 
 	for _, ws := range s.container.RegisteredWebServices() {
 		klog.V(2).Infof("%s", ws.RootPath())
 	}
 
-	// container 作为http server 的handler
 	s.Server.Handler = s.container
 
-	// 注册服务
-	s.installCaptainAPIs()
 	// handle chain
 	s.buildHandlerChain(stopCh)
 
@@ -77,12 +76,17 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 // Install all captain api groups
 // Installation happens before all informers start to cache objects, so
 //   any attempt to list objects using listers will get empty results.
-func (s *APIServer) installCaptainAPIs() {
+func (s *CaptainAPIServer) installCaptainAPIs() {
+	// nataive apis of kubernetes
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
+
+	// captain apis for kube resources
+	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache))
+
 }
 
 //通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
-func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
+func (s *CaptainAPIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	requestInfoResolver := &request.RequestInfoFactory{
 		APIPrefixes: sets.NewString("api", "apis"),
 	}
@@ -100,7 +104,7 @@ func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	s.Server.Handler = handler
 }
 
-func (s *APIServer) waitForResourceSync(ctx context.Context) error {
+func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 	klog.V(0).Info("Start cache objects")
 
 	stopCh := ctx.Done()
@@ -126,6 +130,23 @@ func (s *APIServer) waitForResourceSync(ctx context.Context) error {
 
 	crdInformerFactory := s.InformerFactory.CaptainSharedInformerFactory()
 
+	//caching kubernetes native resources
+	kubeGVRs := []schema.GroupVersionResource{
+		{Group: "apps", Version: "v1", Resource: "deployments"},
+	}
+	for _, gvr := range kubeGVRs {
+		if !isResourceExists(gvr) {
+			klog.Warningf("resource %s not exists in the cluster", gvr.String())
+		} else {
+			_, err = s.InformerFactory.KubernetesSharedInformerFactory().ForResource(gvr)
+			if err != nil {
+				klog.Errorf("can not make informer for resource - %s ", gvr.String())
+			}
+		}
+	}
+	s.InformerFactory.KubernetesSharedInformerFactory().Start(stopCh)
+
+	// caching other crds
 	captainGVRs := []schema.GroupVersionResource{
 		{Group: "cluster.captain.io", Version: "v1beta1", Resource: "clusters"},
 	}
@@ -149,7 +170,7 @@ func (s *APIServer) waitForResourceSync(ctx context.Context) error {
 	return nil
 }
 
-func (s *APIServer) Run(ctx context.Context) (err error) {
+func (s *CaptainAPIServer) Run(ctx context.Context) (err error) {
 	err = s.waitForResourceSync(ctx)
 	if err != nil {
 		return err
@@ -162,6 +183,9 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 		<-ctx.Done()
 		_ = s.Server.Shutdown(shutdownCtx)
 	}()
+
+	// Caching resources
+	// informersFactory := informers.NewInformerFactories(kubeClient)
 
 	klog.V(0).Infof("Start listening on %s", s.Server.Addr)
 	if s.Server.TLSConfig != nil {
