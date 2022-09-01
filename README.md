@@ -12,6 +12,8 @@ This project aims to building a platform which has rich function of managing k8s
 
 ## quick-start
 
+see more about [quick-start](docs/guide/quick-start.md)
+
 ### 编译
 
 进入主目录
@@ -42,3 +44,7 @@ curl http://127.0.0.1:9090/api/v1/namespaces
 # 请求deployment 等apis/apps/v1的资源
 curl http://127.0.0.1:9090/apis/apps/v1/deployments
 ```
+
+## development
+
+see more about [development](docs/guide/development.md)
