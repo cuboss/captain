@@ -27,8 +27,6 @@ var (
 type ResourceProcessor struct {
 	clusterResourceProcessors    map[schema.GroupVersionResource]alpha1.KubeResProvider
 	namespacedResourceProcessors map[schema.GroupVersionResource]alpha1.KubeResProvider
-	namespacedProcessors         map[schema.GroupVersionResource]alpha1.KubeResProvider
-	nodeProcessors               map[schema.GroupVersionResource]alpha1.KubeResProvider
 }
 
 func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cache) *ResourceProcessor {
