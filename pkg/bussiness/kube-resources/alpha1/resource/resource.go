@@ -3,6 +3,8 @@ package resource
 import (
 	"captain/pkg/bussiness/kube-resources/alpha1"
 	"captain/pkg/bussiness/kube-resources/alpha1/deployment"
+	"captain/pkg/bussiness/kube-resources/alpha1/namespace"
+	"captain/pkg/bussiness/kube-resources/alpha1/node"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
 	"errors"
@@ -15,7 +17,9 @@ import (
 )
 
 var (
-	DeploymentGVR           = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployment"}
+	NamespaceGVR            = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+	NodeGVR                 = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "nodes"}
+	DeploymentGVR           = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	ErrResourceNotSupported = errors.New("resource is not supported")
 )
 
@@ -23,6 +27,8 @@ var (
 type ResourceProcessor struct {
 	clusterResourceProcessors    map[schema.GroupVersionResource]alpha1.KubeResProvider
 	namespacedResourceProcessors map[schema.GroupVersionResource]alpha1.KubeResProvider
+	namespacedProcessors         map[schema.GroupVersionResource]alpha1.KubeResProvider
+	nodeProcessors               map[schema.GroupVersionResource]alpha1.KubeResProvider
 }
 
 func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cache) *ResourceProcessor {
@@ -30,6 +36,8 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	clusterResourceProcessors := make(map[schema.GroupVersionResource]alpha1.KubeResProvider)
 
 	//native kube resources
+	clusterResourceProcessors[NamespaceGVR] = namespace.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[NodeGVR] = node.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[DeploymentGVR] = deployment.New(factory.KubernetesSharedInformerFactory())
 
 	return &ResourceProcessor{

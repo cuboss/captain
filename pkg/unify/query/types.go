@@ -28,6 +28,7 @@ const (
 	FieldStatus              = "status"
 	FieldOwnerReference      = "ownerReference"
 	FieldOwnerKind           = "ownerKind"
+	FieldRole                = "role"
 
 	FieldType = "type"
 )

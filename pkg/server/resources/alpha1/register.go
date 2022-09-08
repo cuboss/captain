@@ -44,13 +44,35 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
 		Param(webservice.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-
+	webservice.Route(webservice.GET("resources/{resources}").
+		To(handler.handleListResources).
+		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
+		Doc("core level resources").
+		Param(webservice.PathParameter("resources", "core scope resource type, e.g: namespaces,nodes.")).
+		Param(webservice.QueryParameter(query.ParameterName, "name used to do filtering").Required(false)).
+		Param(webservice.QueryParameter(query.ParameterPage, "page, which is started with 1 not 0, default value is 1.").Required(false).DataFormat("page=%d").DefaultValue("page=1")).
+		Param(webservice.QueryParameter(query.ParameterPageSize, "pageSize").Required(false).DataFormat("pageSize=%d").DefaultValue("pageSize=10")).
+		Param(webservice.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
+		Param(webservice.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
+		Returns(http.StatusOK, ok, api.ListResult{}))
 	webservice.Route(webservice.GET("/namespaces/{namespace}/resources/{resources}/name/{name}").
 		To(handler.handleGetResource).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").
 		Param(webservice.PathParameter("resources", "namespace scope resource type, e.g: pods,jobs,configmaps,services.")).
 		Param(webservice.PathParameter("namespace", "namespace of resources")).
+		Param(webservice.PathParameter("name", "name of resources")).
+		Param(webservice.QueryParameter(query.ParameterName, "name used to do filtering").Required(false)).
+		Param(webservice.QueryParameter(query.ParameterPage, "page").Required(false).DataFormat("page=%d").DefaultValue("page=1")).
+		Param(webservice.QueryParameter(query.ParameterPageSize, "pageSize").Required(false).DataFormat("pageSize=%d").DefaultValue("pageSize=10")).
+		Param(webservice.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
+		Param(webservice.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
+		Returns(http.StatusOK, ok, api.ListResult{}))
+	webservice.Route(webservice.GET("resources/{resources}/{name}").
+		To(handler.handleGetResource).
+		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
+		Doc("Cluster level resources").
+		Param(webservice.PathParameter("resources", "core scope resource type, e.g: namespaces,nodes.")).
 		Param(webservice.PathParameter("name", "name of resources")).
 		Param(webservice.QueryParameter(query.ParameterName, "name used to do filtering").Required(false)).
 		Param(webservice.QueryParameter(query.ParameterPage, "page").Required(false).DataFormat("page=%d").DefaultValue("page=1")).
