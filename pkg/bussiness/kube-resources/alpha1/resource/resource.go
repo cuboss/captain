@@ -5,11 +5,12 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1/deployment"
 	"captain/pkg/bussiness/kube-resources/alpha1/namespace"
 	"captain/pkg/bussiness/kube-resources/alpha1/node"
+	"captain/pkg/bussiness/kube-resources/alpha1/pod"
+	"captain/pkg/bussiness/kube-resources/alpha1/statefulset"
+	"captain/pkg/informers"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
 	"errors"
-
-	"captain/pkg/informers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -20,6 +21,8 @@ var (
 	NamespaceGVR            = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
 	NodeGVR                 = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "nodes"}
 	DeploymentGVR           = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	StatefulsetGVR          = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
+	PodGVR                  = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	ErrResourceNotSupported = errors.New("resource is not supported")
 )
 
@@ -37,6 +40,8 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	clusterResourceProcessors[NamespaceGVR] = namespace.New(factory.KubernetesSharedInformerFactory())
 	clusterResourceProcessors[NodeGVR] = node.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[DeploymentGVR] = deployment.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[PodGVR] = pod.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[StatefulsetGVR] = statefulset.New(factory.KubernetesSharedInformerFactory())
 
 	return &ResourceProcessor{
 		namespacedResourceProcessors: namespacedResourceProcessors,

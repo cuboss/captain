@@ -68,7 +68,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
 		Param(webservice.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-	webservice.Route(webservice.GET("resources/{resources}/{name}").
+	webservice.Route(webservice.GET("resources/{resources}/name/{name}").
 		To(handler.handleGetResource).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").

@@ -132,9 +132,11 @@ func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 
 	//caching kubernetes native resources
 	kubeGVRs := []schema.GroupVersionResource{
-		{Group: "apps", Version: "v1", Resource: "deployments"},
 		{Group: "", Version: "v1", Resource: "namespaces"},
 		{Group: "", Version: "v1", Resource: "nodes"},
+		{Group: "apps", Version: "v1", Resource: "deployments"},
+		{Group: "apps", Version: "v1", Resource: "statefulsets"},
+		{Group: "", Version: "v1", Resource: "pods"},
 	}
 	for _, gvr := range kubeGVRs {
 		if !isResourceExists(gvr) {
