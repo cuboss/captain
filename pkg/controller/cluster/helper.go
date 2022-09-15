@@ -14,6 +14,7 @@ func buildKubeconfigFromRestConfig(config *rest.Config) ([]byte, error) {
 	apiCluster := &api.Cluster{
 		Server:                   config.Host,
 		CertificateAuthorityData: config.CAData,
+		InsecureSkipTLSVerify:    config.Insecure,
 	}
 
 	// generated kubeconfig will be used by cluster federation, CAFile is not

@@ -14,6 +14,7 @@ import (
 	"captain/pkg/unify/response"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -127,6 +128,12 @@ func validation(obj runtime.Object) (*v1alpha1.Cluster, error) {
 	if len(cluster.Name) == 0 {
 		return nil, fmt.Errorf("cluster's name required.")
 	}
+	if cluster.Labels != nil {
+		region := cluster.Labels[v1alpha1.ClusterRegion]
+		if len(region) != 0 && !strings.HasPrefix(cluster.Name, region+"-") {
+			return nil, fmt.Errorf("error cluster.Name format.(cluster.Name should has prefix be like '{region}-') ")
+		}
+	}
 	// TODO cluster内容校验，连通性校验
 	return cluster, nil
 }
@@ -136,11 +143,27 @@ func (cp clusterProvider) Delete(namespace, name string) error {
 	return err
 }
 
-func (cp clusterProvider) Update(namespace string, obj runtime.Object) (runtime.Object, error) {
+func (cp clusterProvider) Update(namespace, name string, obj runtime.Object) (runtime.Object, error) {
+
+	metaObj, err := meta.Accessor(obj)
+	if err != nil {
+		return nil, err
+	}
+	if metaObj.GetName() != name {
+		return nil, fmt.Errorf("cluster's name incorrect.")
+	}
+
 	cluster, err := validation(obj)
 	if err != nil {
 		return nil, err
 	}
+
+	oldCluster, err := cp.sharedInformers.Cluster().V1alpha1().Clusters().Lister().Get(name)
+	if err != nil {
+		return nil, err
+	}
+	cluster.ResourceVersion = oldCluster.ResourceVersion
+
 	clu, err := cp.client.V1beta1().Clusters().Update(context.TODO(), cluster, metav1.UpdateOptions{})
 	return clu, err
 }

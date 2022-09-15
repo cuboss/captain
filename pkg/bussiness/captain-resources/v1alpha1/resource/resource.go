@@ -95,11 +95,11 @@ func (r *ResourceProcessor) Delete(resource, namespace, name string) error {
 	return provider.Delete(namespace, name)
 }
 
-func (r *ResourceProcessor) Update(resource, namespace string, obj runtime.Object) (runtime.Object, error) {
+func (r *ResourceProcessor) Update(resource, namespace, name string, obj runtime.Object) (runtime.Object, error) {
 	clusterScope := namespace == ""
 	provider := r.TryResource(clusterScope, resource)
 	if provider == nil {
 		return nil, ErrResourceNotSupported
 	}
-	return provider.Update(namespace, obj)
+	return provider.Update(namespace, name, obj)
 }

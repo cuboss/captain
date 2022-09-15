@@ -54,7 +54,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 			Param(webservice.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 			Returns(http.StatusOK, api.StatusOK, api.ListResult{Items: []interface{}{}}))
 
-		webservice.Route(webservice.GET("/{resources}/name/{name}").
+		webservice.Route(webservice.GET("/{resources}/{name}").
 			To(handler.handleGetResource).
 			Metadata(restfulspec.KeyOpenAPITags, []string{resource.Name}).
 			Doc("get single "+strings.Join(resource.Resources, ", ")).
@@ -82,7 +82,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 			Param(webservice.PathParameter(query.ParameterName, "the name of the resource")).
 			Returns(http.StatusOK, api.StatusOK, errors.None))
 
-		webservice.Route(webservice.PUT("/{resources}").
+		webservice.Route(webservice.PUT("/{resources}/{name}").
 			To(handler.handleUpdateResource).
 			Metadata(restfulspec.KeyOpenAPITags, []string{resource.Name}).
 			Doc("update "+strings.Join(resource.Resources, ", ")).

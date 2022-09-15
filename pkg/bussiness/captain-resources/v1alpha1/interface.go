@@ -21,5 +21,5 @@ type CaptainResProvider interface {
 	Delete(namespace, name string) error
 
 	// Update a object by its namespace and name
-	Update(namespace string, obj runtime.Object) (runtime.Object, error)
+	Update(namespace, name string, obj runtime.Object) (runtime.Object, error)
 }
