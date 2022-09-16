@@ -85,7 +85,7 @@ func TestHandleListResources(t *testing.T) {
 	}{
 		{
 			description: "list clusters",
-			resource:    "cluster",
+			resource:    "clusters",
 			query: &query.QueryInfo{
 				Pagination: &query.Pagination{
 					PageSize: 10,
@@ -137,14 +137,14 @@ func TestHandleGetResources(t *testing.T) {
 	}{
 		{
 			description:   "get clusters",
-			resource:      "cluster",
+			resource:      "clusters",
 			name:          "test1",
 			expectedError: nil,
 			expected:      clusters[0].(*v1alpha1.Cluster),
 		},
 		{
 			description:   "get clusters",
-			resource:      "cluster",
+			resource:      "clusters",
 			name:          "test2",
 			expectedError: nil,
 			expected:      clusters[1].(*v1alpha1.Cluster),
