@@ -31,6 +31,7 @@ const (
 	FieldOwnerKind           = "ownerKind"
 	FieldOwnerName           = "ownerName"
 	FieldRole                = "role"
+	FieldUserfacing          = "userfacing"
 
 	FieldType = "type"
 )

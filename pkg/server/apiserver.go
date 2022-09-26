@@ -134,9 +134,21 @@ func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 	kubeGVRs := []schema.GroupVersionResource{
 		{Group: "", Version: "v1", Resource: "namespaces"},
 		{Group: "", Version: "v1", Resource: "nodes"},
+		{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles"},
+		{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"},
+		{Group: "", Version: "v1", Resource: "persistentvolumes"},
+
 		{Group: "apps", Version: "v1", Resource: "deployments"},
 		{Group: "apps", Version: "v1", Resource: "statefulsets"},
 		{Group: "", Version: "v1", Resource: "pods"},
+		{Group: "batch", Version: "v1", Resource: "jobs"},
+		{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
+		{Group: "apps", Version: "v1", Resource: "daemonsets"},
+		{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"},
+		{Group: "", Version: "v1", Resource: "services"},
+		{Group: "", Version: "v1", Resource: "configmaps"},
+		{Group: "", Version: "v1", Resource: "persistentvolumeclaims"},
+		{Group: "", Version: "v1", Resource: "secrets"},
 	}
 	for _, gvr := range kubeGVRs {
 		if !isResourceExists(gvr) {

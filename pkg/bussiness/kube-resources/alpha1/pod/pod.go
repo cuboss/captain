@@ -48,9 +48,9 @@ func (pd *podProvider) filter(object runtime.Object, filter query.Filter) bool {
 	case query.FieldOwnerKind:
 		fallthrough
 	case query.FieldOwnerName:
-		kind := query.FieldOwnerKind
-		name := query.FieldOwnerName
-		if !pd.podBelongTo(pod, kind, name) {
+		kind := filter.Field
+		name := filter.Value
+		if !pd.podBelongTo(pod, string(kind), string(name)) {
 			return false
 		}
 	case "nodeName":
