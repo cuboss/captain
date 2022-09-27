@@ -20,11 +20,11 @@ type V1beta1Interface interface {
 type V1beta1Client struct {
 	GaiaCliet *gaia.GaiaCrdSet
 	// cluster
-	Versioned *versioned.Clientset
+	Versioned versioned.Interface
 	// todo list
 }
 
-func NewV1beta1Config(c *rest.Config, versioned *versioned.Clientset) (*V1beta1Client, error) {
+func NewV1beta1Config(c *rest.Config, versioned versioned.Interface) (*V1beta1Client, error) {
 	configShallowCopy := *c
 
 	if configShallowCopy.UserAgent == "" {

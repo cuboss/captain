@@ -11,6 +11,7 @@ import (
 	"captain/pkg/server/filters"
 	"captain/pkg/server/request"
 	resAlpha1 "captain/pkg/server/resources/alpha1"
+	resV1alpha1 "captain/pkg/server/resources/v1alpha1"
 	"captain/pkg/simple/client/k8s"
 
 	"github.com/emicklei/go-restful"
@@ -75,7 +76,8 @@ func (s *CaptainAPIServer) PrepareRun(stopCh <-chan struct{}) error {
 
 // Install all captain api groups
 // Installation happens before all informers start to cache objects, so
-//   any attempt to list objects using listers will get empty results.
+//
+//	any attempt to list objects using listers will get empty results.
 func (s *CaptainAPIServer) installCaptainAPIs() {
 	// nataive apis of kubernetes
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
@@ -83,9 +85,12 @@ func (s *CaptainAPIServer) installCaptainAPIs() {
 	// captain apis for kube resources
 	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache))
 
+	// captain apis for captain cluster resources
+	urlruntime.Must(resV1alpha1.AddToContainer(s.container, s.InformerFactory, s.KubernetesClient, s.KubeRuntimeCache))
+
 }
 
-//通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
+// 通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
 func (s *CaptainAPIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	requestInfoResolver := &request.RequestInfoFactory{
 		APIPrefixes: sets.NewString("api", "apis"),

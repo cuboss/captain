@@ -3,14 +3,16 @@ package crd
 import (
 	"captain/pkg/client/clientset/versioned"
 	"captain/pkg/crd/v1beta1"
+	"captain/pkg/crd/v1beta1/gaia"
 
 	"k8s.io/client-go/rest"
 )
 
-//　all crd interface set
+// 　all crd interface set
 // to avoid interface duplicate name, you need to implement crd such as Getxxx
 // for example GaiaCluster crd:
-// 		call as:  CrdClientSet.GaiaClusters.Create(...)...
+//
+//	call as:  CrdClientSet.GaiaClusters.Create(...)...
 type CrdInterface interface {
 	V1beta1() v1beta1.V1beta1Interface
 	Versioned() versioned.Interface
@@ -25,7 +27,7 @@ type CrdController struct {
 	v1beta1 *v1beta1.V1beta1Client
 	// todo list
 	// crd client
-	versioned *versioned.Clientset
+	versioned versioned.Interface
 }
 
 func (c *CrdController) V1beta1() v1beta1.V1beta1Interface {
@@ -60,4 +62,16 @@ func NewForConfig(c *rest.Config) (CrdInterface, error) {
 
 	// todo list
 	return controller, nil
+}
+
+func New(gaiaCli *gaia.GaiaCrdSet, versionedCli versioned.Interface) CrdInterface {
+	controller := &CrdController{}
+
+	controller.versioned = versionedCli
+	controller.v1beta1 = &v1beta1.V1beta1Client{
+		GaiaCliet: gaiaCli,
+		Versioned: versionedCli,
+	}
+
+	return controller
 }
