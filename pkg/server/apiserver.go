@@ -135,6 +135,7 @@ func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 		{Group: "", Version: "v1", Resource: "namespaces"},
 		{Group: "", Version: "v1", Resource: "nodes"},
 		{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles"},
+		{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"},
 		{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"},
 		{Group: "", Version: "v1", Resource: "persistentvolumes"},
 
@@ -149,6 +150,10 @@ func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 		{Group: "", Version: "v1", Resource: "configmaps"},
 		{Group: "", Version: "v1", Resource: "persistentvolumeclaims"},
 		{Group: "", Version: "v1", Resource: "secrets"},
+		{Group: "", Version: "v1", Resource: "serviceaccounts"},
+		{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"},
+		{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"},
+		{Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies"},
 	}
 	for _, gvr := range kubeGVRs {
 		if !isResourceExists(gvr) {

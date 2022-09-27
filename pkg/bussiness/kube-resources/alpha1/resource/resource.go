@@ -3,6 +3,7 @@ package resource
 import (
 	"captain/pkg/bussiness/kube-resources/alpha1"
 	"captain/pkg/bussiness/kube-resources/alpha1/clusterrole"
+	"captain/pkg/bussiness/kube-resources/alpha1/clusterrolebinding"
 	"captain/pkg/bussiness/kube-resources/alpha1/configmap"
 	"captain/pkg/bussiness/kube-resources/alpha1/cronjob"
 	"captain/pkg/bussiness/kube-resources/alpha1/daemonset"
@@ -10,12 +11,16 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1/ingress"
 	"captain/pkg/bussiness/kube-resources/alpha1/job"
 	"captain/pkg/bussiness/kube-resources/alpha1/namespace"
+	"captain/pkg/bussiness/kube-resources/alpha1/networkpolicy"
 	"captain/pkg/bussiness/kube-resources/alpha1/node"
 	"captain/pkg/bussiness/kube-resources/alpha1/persistentvolume"
 	"captain/pkg/bussiness/kube-resources/alpha1/persistentvolumeclaim"
 	"captain/pkg/bussiness/kube-resources/alpha1/pod"
+	"captain/pkg/bussiness/kube-resources/alpha1/role"
+	"captain/pkg/bussiness/kube-resources/alpha1/rolebinding"
 	"captain/pkg/bussiness/kube-resources/alpha1/secret"
 	"captain/pkg/bussiness/kube-resources/alpha1/service"
+	"captain/pkg/bussiness/kube-resources/alpha1/serviceaccount"
 	"captain/pkg/bussiness/kube-resources/alpha1/statefulset"
 	"captain/pkg/bussiness/kube-resources/alpha1/storageclass"
 	"captain/pkg/informers"
@@ -45,6 +50,11 @@ var (
 	ConfigmapGVR             = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
 	PersistentvolumeClaimGVR = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}
 	SecretGVR                = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
+	ServiceaccountGVR        = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
+	RoleGVR                  = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"}
+	ClusterrolebindingGVR    = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"}
+	RolebindingGVR           = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"}
+	NetworkpolicieGVR        = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies"}
 	ErrResourceNotSupported  = errors.New("resource is not supported")
 )
 
@@ -64,6 +74,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	clusterResourceProcessors[ClusterroleGVR] = clusterrole.New(factory.KubernetesSharedInformerFactory())
 	clusterResourceProcessors[StorageclassGVR] = storageclass.New(factory.KubernetesSharedInformerFactory())
 	clusterResourceProcessors[PersistentvolumeGVR] = persistentvolume.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[ClusterrolebindingGVR] = clusterrolebinding.New(factory.KubernetesSharedInformerFactory())
 
 	namespacedResourceProcessors[DeploymentGVR] = deployment.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[PodGVR] = pod.New(factory.KubernetesSharedInformerFactory())
@@ -76,7 +87,10 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	namespacedResourceProcessors[ConfigmapGVR] = configmap.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[PersistentvolumeClaimGVR] = persistentvolumeclaim.New(factory.KubernetesSharedInformerFactory(), factory.SnapshotSharedInformerFactory())
 	namespacedResourceProcessors[SecretGVR] = secret.New(factory.KubernetesSharedInformerFactory())
-
+	namespacedResourceProcessors[RolebindingGVR] = rolebinding.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[RoleGVR] = role.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[ServiceaccountGVR] = serviceaccount.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[NetworkpolicieGVR] = networkpolicy.New(factory.KubernetesSharedInformerFactory())
 	return &ResourceProcessor{
 		namespacedResourceProcessors: namespacedResourceProcessors,
 		clusterResourceProcessors:    clusterResourceProcessors,
