@@ -22,12 +22,16 @@ const (
 	FieldCreateTime          = "createTime"
 	FieldLastUpdateTimestamp = "lastUpdateTimestamp"
 	FieldUpdateTime          = "updateTime"
+	FieldStartTime           = "startTime"
 	FieldLabel               = "label"
 	FieldAnnotation          = "annotation"
 	FieldNamespace           = "namespace"
 	FieldStatus              = "status"
 	FieldOwnerReference      = "ownerReference"
 	FieldOwnerKind           = "ownerKind"
+	FieldOwnerName           = "ownerName"
+	FieldRole                = "role"
+	FieldUserfacing          = "userfacing"
 
 	FieldType = "type"
 )
