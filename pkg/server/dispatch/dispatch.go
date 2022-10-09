@@ -62,10 +62,10 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 		return
 	}
 
-	if !c.IsClusterReady(cluster) {
+	/*if !c.IsClusterReady(cluster) {
 		http.Error(w, fmt.Sprintf("cluster %s is not ready", cluster.Name), http.StatusBadRequest)
 		return
-	}
+	}*/
 
 	innCluster := c.GetInnerCluster(cluster.Name)
 	if innCluster == nil {

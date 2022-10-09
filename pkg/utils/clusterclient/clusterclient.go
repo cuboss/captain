@@ -182,6 +182,10 @@ func newInnerCluster(cluster *clusterv1alpha1.Cluster) *innerCluster {
 		return nil
 	}
 
+	if len(cluster.Spec.Connection.KubernetesAPIEndpoint) == 0 {
+		kubernetesEndpoint, _ = url.Parse(clusterConfig.Host)
+	}
+
 	transport, err := rest.TransportFor(clusterConfig)
 	if err != nil {
 		klog.Errorf("Create transport failed, %v", err)
