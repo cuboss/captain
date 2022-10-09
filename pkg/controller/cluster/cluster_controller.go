@@ -52,8 +52,8 @@ const (
 	// 5ms, 10ms, 20ms, 40ms, 80ms, 160ms, 320ms, 640ms, 1.3s, 2.6s, 5.1s, 10.2s, 20.4s, 41s, 82s
 	maxRetries = 15
 
-	kubefedNamespace  = "kube-federation-system"
-	openpitrixRuntime = "openpitrix.io/runtime"
+	// kubefedNamespace  = "kube-federation-system"
+	// openpitrixRuntime = "openpitrix.io/runtime"
 	captainManaged    = "captain.io/managed"
 
 	// proxy format
