@@ -1,10 +1,13 @@
 # 多集群
+
+需要在host集群上上先 apply `clusters`的crd: [cluster.captain.io_clusters.yaml](../deploy/crd/cluster/cluster.captain.io_clusters.yaml)
+
 ## 接口
-GET /capis/cluster.captain.io/clusters\
-GET /capis/cluster.captain.io/clusters/{name}\
-POST /capis/cluster.captain.io/clusters\
-DELETE /capis/cluster.captain.io/clusters/{name}\
-PUT /capis/cluster.captain.io/clusters/{name}
+GET /capis/cluster.captain.io/v1alpha1/clusters\
+GET /capis/cluster.captain.io/v1alpha1/clusters/{name}\
+POST /capis/cluster.captain.io/v1alpha1/clusters\
+DELETE /capis/cluster.captain.io/v1alpha1/clusters/{name}\
+PUT /capis/cluster.captain.io/v1alpha1/clusters/{name}
 
 ## 多集群代理接口
 /regions/{region}/cluster/{name}/...\
