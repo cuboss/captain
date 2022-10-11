@@ -149,7 +149,7 @@ func (r *RequestInfoFactory) NewRequestInfo(req *http.Request) (*RequestInfo, er
 	currentParts = currentParts[1:]
 
 	// URL forms: /capis/regions/{region}/clusters/{cluster}/*
-	currentParts = tryFetchRegionAndClusterInfo(currentParts, &requestInfo)
+	// currentParts = tryFetchRegionAndClusterInfo(currentParts, &requestInfo)
 
 	if !r.GrouplessAPIPrefixes.Has(requestInfo.APIPrefix) {
 		// one part (APIPrefix) has already been consumed, so this is actually "do we have four parts?"

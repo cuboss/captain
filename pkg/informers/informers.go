@@ -1,6 +1,7 @@
 package informers
 
 import (
+	snapshotinformer "github.com/kubernetes-csi/external-snapshotter/client/v4/informers/externalversions"
 	"time"
 
 	"captain/pkg/client/informers/externalversions"
@@ -17,14 +18,16 @@ const defaultResync = 5 * time.Second
 type CapInformerFactory interface {
 	KubernetesSharedInformerFactory() kubeInformers.SharedInformerFactory
 	CaptainSharedInformerFactory() externalversions.SharedInformerFactory
+	SnapshotSharedInformerFactory() snapshotinformer.SharedInformerFactory
 
 	// Start shared informer factory one by one if they are not nil
 	Start(stopCh <-chan struct{})
 }
 
 type informerFactories struct {
-	informerFactory kubeInformers.SharedInformerFactory
-	captainFactory  externalversions.SharedInformerFactory
+	informerFactory         kubeInformers.SharedInformerFactory
+	captainFactory          externalversions.SharedInformerFactory
+	snapshotInformerFactory snapshotinformer.SharedInformerFactory
 }
 
 func NewInformerFactories(client kubernetes.Interface, crdClient crd.CrdInterface) CapInformerFactory {
@@ -47,6 +50,10 @@ func (f *informerFactories) KubernetesSharedInformerFactory() kubeInformers.Shar
 
 func (f *informerFactories) CaptainSharedInformerFactory() externalversions.SharedInformerFactory {
 	return f.captainFactory
+}
+
+func (f *informerFactories) SnapshotSharedInformerFactory() snapshotinformer.SharedInformerFactory {
+	return f.snapshotInformerFactory
 }
 
 func (f *informerFactories) Start(stopCh <-chan struct{}) {

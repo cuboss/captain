@@ -2,12 +2,31 @@ package resource
 
 import (
 	"captain/pkg/bussiness/kube-resources/alpha1"
+	"captain/pkg/bussiness/kube-resources/alpha1/clusterrole"
+	"captain/pkg/bussiness/kube-resources/alpha1/clusterrolebinding"
+	"captain/pkg/bussiness/kube-resources/alpha1/configmap"
+	"captain/pkg/bussiness/kube-resources/alpha1/cronjob"
+	"captain/pkg/bussiness/kube-resources/alpha1/daemonset"
 	"captain/pkg/bussiness/kube-resources/alpha1/deployment"
+	"captain/pkg/bussiness/kube-resources/alpha1/ingress"
+	"captain/pkg/bussiness/kube-resources/alpha1/job"
+	"captain/pkg/bussiness/kube-resources/alpha1/namespace"
+	"captain/pkg/bussiness/kube-resources/alpha1/networkpolicy"
+	"captain/pkg/bussiness/kube-resources/alpha1/node"
+	"captain/pkg/bussiness/kube-resources/alpha1/persistentvolume"
+	"captain/pkg/bussiness/kube-resources/alpha1/persistentvolumeclaim"
+	"captain/pkg/bussiness/kube-resources/alpha1/pod"
+	"captain/pkg/bussiness/kube-resources/alpha1/role"
+	"captain/pkg/bussiness/kube-resources/alpha1/rolebinding"
+	"captain/pkg/bussiness/kube-resources/alpha1/secret"
+	"captain/pkg/bussiness/kube-resources/alpha1/service"
+	"captain/pkg/bussiness/kube-resources/alpha1/serviceaccount"
+	"captain/pkg/bussiness/kube-resources/alpha1/statefulset"
+	"captain/pkg/bussiness/kube-resources/alpha1/storageclass"
+	"captain/pkg/informers"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
 	"errors"
-
-	"captain/pkg/informers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -15,8 +34,28 @@ import (
 )
 
 var (
-	DeploymentGVR           = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployment"}
-	ErrResourceNotSupported = errors.New("resource is not supported")
+	NamespaceGVR             = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+	NodeGVR                  = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "nodes"}
+	ClusterroleGVR           = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles"}
+	StorageclassGVR          = schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}
+	PersistentvolumeGVR      = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumes"}
+	DeploymentGVR            = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	StatefulsetGVR           = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
+	PodGVR                   = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
+	JobGVR                   = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "jobs"}
+	CronJobGVR               = schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobs"}
+	DaemonsetGVR             = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}
+	IngresseGVR              = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}
+	ServiceGVR               = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
+	ConfigmapGVR             = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
+	PersistentvolumeClaimGVR = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}
+	SecretGVR                = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
+	ServiceaccountGVR        = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
+	RoleGVR                  = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"}
+	ClusterrolebindingGVR    = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"}
+	RolebindingGVR           = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"}
+	NetworkpolicieGVR        = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies"}
+	ErrResourceNotSupported  = errors.New("resource is not supported")
 )
 
 //ResourceProcessor ... processing resources including kube-native, sevice mesh , others kinds of cloud-native resources
@@ -30,8 +69,28 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	clusterResourceProcessors := make(map[schema.GroupVersionResource]alpha1.KubeResProvider)
 
 	//native kube resources
-	namespacedResourceProcessors[DeploymentGVR] = deployment.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[NamespaceGVR] = namespace.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[NodeGVR] = node.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[ClusterroleGVR] = clusterrole.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[StorageclassGVR] = storageclass.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[PersistentvolumeGVR] = persistentvolume.New(factory.KubernetesSharedInformerFactory())
+	clusterResourceProcessors[ClusterrolebindingGVR] = clusterrolebinding.New(factory.KubernetesSharedInformerFactory())
 
+	namespacedResourceProcessors[DeploymentGVR] = deployment.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[PodGVR] = pod.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[StatefulsetGVR] = statefulset.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[JobGVR] = job.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[CronJobGVR] = cronjob.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[DaemonsetGVR] = daemonset.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[IngresseGVR] = ingress.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[ServiceGVR] = service.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[ConfigmapGVR] = configmap.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[PersistentvolumeClaimGVR] = persistentvolumeclaim.New(factory.KubernetesSharedInformerFactory(), factory.SnapshotSharedInformerFactory())
+	namespacedResourceProcessors[SecretGVR] = secret.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[RolebindingGVR] = rolebinding.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[RoleGVR] = role.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[ServiceaccountGVR] = serviceaccount.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[NetworkpolicieGVR] = networkpolicy.New(factory.KubernetesSharedInformerFactory())
 	return &ResourceProcessor{
 		namespacedResourceProcessors: namespacedResourceProcessors,
 		clusterResourceProcessors:    clusterResourceProcessors,
