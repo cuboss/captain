@@ -26,6 +26,7 @@ import (
 	"captain/pkg/informers"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
+	"captain/pkg/utils/clusterclient"
 	"errors"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,10 +59,12 @@ var (
 	ErrResourceNotSupported  = errors.New("resource is not supported")
 )
 
-//ResourceProcessor ... processing resources including kube-native, sevice mesh , others kinds of cloud-native resources
+// ResourceProcessor ... processing resources including kube-native, sevice mesh , others kinds of cloud-native resources
 type ResourceProcessor struct {
 	clusterResourceProcessors    map[schema.GroupVersionResource]alpha1.KubeResProvider
 	namespacedResourceProcessors map[schema.GroupVersionResource]alpha1.KubeResProvider
+
+	multiClusterResourceProcessors map[schema.GroupVersionResource]alpha1.MultiClusterKubeResProvider
 }
 
 func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cache) *ResourceProcessor {
@@ -91,9 +94,37 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	namespacedResourceProcessors[RoleGVR] = role.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[ServiceaccountGVR] = serviceaccount.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[NetworkpolicieGVR] = networkpolicy.New(factory.KubernetesSharedInformerFactory())
+
+	// multi cluster native kube resource
+	multiClusterResourceProcessors := make(map[schema.GroupVersionResource]alpha1.MultiClusterKubeResProvider)
+	clients := clusterclient.NewClusterClients(factory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters())
+	multiClusterResourceProcessors[NamespaceGVR] = namespace.NewMCResProvider(clients)
+	multiClusterResourceProcessors[NodeGVR] = node.NewMCResProvider(clients)
+	multiClusterResourceProcessors[ClusterroleGVR] = clusterrole.NewMCResProvider(clients)
+	multiClusterResourceProcessors[StorageclassGVR] = storageclass.NewMCResProvider(clients)
+	multiClusterResourceProcessors[PersistentvolumeGVR] = persistentvolume.NewMCResProvider(clients)
+	multiClusterResourceProcessors[ClusterrolebindingGVR] = clusterrolebinding.NewMCResProvider(clients)
+
+	multiClusterResourceProcessors[DeploymentGVR] = deployment.NewMCResProvider(clients)
+	multiClusterResourceProcessors[PodGVR] = pod.NewMCResProvider(clients)
+	multiClusterResourceProcessors[StatefulsetGVR] = statefulset.NewMCResProvider(clients)
+	multiClusterResourceProcessors[JobGVR] = job.NewMCResProvider(clients)
+	multiClusterResourceProcessors[CronJobGVR] = cronjob.NewMCResProvider(clients)
+	multiClusterResourceProcessors[DaemonsetGVR] = daemonset.NewMCResProvider(clients)
+	multiClusterResourceProcessors[IngresseGVR] = ingress.NewMCResProvider(clients)
+	multiClusterResourceProcessors[ServiceGVR] = service.NewMCResProvider(clients)
+	multiClusterResourceProcessors[ConfigmapGVR] = configmap.NewMCResProvider(clients)
+	multiClusterResourceProcessors[PersistentvolumeClaimGVR] = persistentvolumeclaim.NewMCResProvider(clients)
+	multiClusterResourceProcessors[SecretGVR] = secret.NewMCResProvider(clients)
+	multiClusterResourceProcessors[RolebindingGVR] = rolebinding.NewMCResProvider(clients)
+	multiClusterResourceProcessors[RoleGVR] = role.NewMCResProvider(clients)
+	multiClusterResourceProcessors[ServiceaccountGVR] = serviceaccount.NewMCResProvider(clients)
+	multiClusterResourceProcessors[NetworkpolicieGVR] = networkpolicy.NewMCResProvider(clients)
+
 	return &ResourceProcessor{
-		namespacedResourceProcessors: namespacedResourceProcessors,
-		clusterResourceProcessors:    clusterResourceProcessors,
+		namespacedResourceProcessors:   namespacedResourceProcessors,
+		clusterResourceProcessors:      clusterResourceProcessors,
+		multiClusterResourceProcessors: multiClusterResourceProcessors,
 	}
 }
 
@@ -112,25 +143,49 @@ func (r *ResourceProcessor) TryResource(clusterScope bool, resource string) alph
 			return v
 		}
 	}
+
 	return nil
 }
 
-func (r *ResourceProcessor) Get(resource, namespace, name string) (runtime.Object, error) {
-	clusterScope := namespace == ""
-	getter := r.TryResource(clusterScope, resource)
+func (r *ResourceProcessor) TryMultiClusterResource(resource string) alpha1.MultiClusterKubeResProvider {
+	for k, v := range r.multiClusterResourceProcessors {
+		if k.Resource == resource {
+			return v
+		}
+	}
+	return nil
+}
+
+func (r *ResourceProcessor) Get(region, cluster, resource, namespace, name string) (runtime.Object, error) {
+	if alpha1.IsHostCluster(region, cluster) {
+		clusterScope := namespace == ""
+		getter := r.TryResource(clusterScope, resource)
+		if getter == nil {
+			return nil, ErrResourceNotSupported
+		}
+		return getter.Get(namespace, name)
+	}
+	getter := r.TryMultiClusterResource(resource)
 	if getter == nil {
 		return nil, ErrResourceNotSupported
 	}
-	return getter.Get(namespace, name)
+	return getter.Get(region, cluster, namespace, name)
 }
 
-func (r *ResourceProcessor) List(resource, namespace string, query *query.QueryInfo) (*response.ListResult, error) {
-	// parse cluster scope or not
-	clusterScope := namespace == ""
+func (r *ResourceProcessor) List(region, cluster, resource, namespace string, query *query.QueryInfo) (*response.ListResult, error) {
+	if alpha1.IsHostCluster(region, cluster) {
+		// parse cluster scope or not
+		clusterScope := namespace == ""
 
-	provider := r.TryResource(clusterScope, resource)
+		provider := r.TryResource(clusterScope, resource)
+		if provider == nil {
+			return nil, ErrResourceNotSupported
+		}
+		return provider.List(namespace, query)
+	}
+	provider := r.TryMultiClusterResource(resource)
 	if provider == nil {
 		return nil, ErrResourceNotSupported
 	}
-	return provider.List(namespace, query)
+	return provider.List(region, cluster, namespace, query)
 }

@@ -10,6 +10,7 @@ import (
 	clusterinformer "captain/pkg/client/informers/externalversions/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,6 +33,7 @@ type ClusterClients interface {
 	GetClusterKubeconfig(string) (string, error)
 	Get(region, cluster string) (*clusterv1alpha1.Cluster, error)
 	GetInnerCluster(string) *innerCluster
+	GetClientSet(string, string) (*kubernetes.Clientset, error)
 }
 
 type clusterClients struct {
@@ -89,6 +91,19 @@ func (c *clusterClients) GetInnerCluster(name string) *innerCluster {
 		return cluster
 	}
 	return nil
+}
+
+func (c *clusterClients) GetClientSet(regionName, clusterName string) (*kubernetes.Clientset, error) {
+	// TODO cache
+	cluster, err := c.Get(regionName, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	r, err := clientcmd.RESTConfigFromKubeConfig([]byte(cluster.Spec.Connection.KubeConfig))
+	if err != nil {
+		return nil, fmt.Errorf("get cluster kubeconfig restconfig err: %v", err)
+	}
+	return kubernetes.NewForConfig(r)
 }
 
 var c *clusterClients

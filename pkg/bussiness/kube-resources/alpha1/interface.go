@@ -19,6 +19,14 @@ type KubeResProvider interface {
 	List(namespace string, query *query.QueryInfo) (*response.ListResult, error)
 }
 
+type MultiClusterKubeResProvider interface {
+	// Get retrieves a single object by its namespace and name
+	Get(region, cluster, namespace, name string) (runtime.Object, error)
+
+	// List retrieves a collection of objects matches given query
+	List(region, cluster, namespace string, query *query.QueryInfo) (*response.ListResult, error)
+}
+
 // CompareFunc return true is left great than right
 type CompareFunc func(runtime.Object, runtime.Object, query.Field) bool
 
