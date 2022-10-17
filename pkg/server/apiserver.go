@@ -7,6 +7,7 @@ import (
 	"captain/pkg/capis/version"
 	"captain/pkg/informers"
 	captainserverconfig "captain/pkg/server/config"
+	"captain/pkg/server/dispatch"
 	"captain/pkg/server/filters"
 	"captain/pkg/server/request"
 	resAlpha1 "captain/pkg/server/resources/alpha1"
@@ -98,10 +99,10 @@ func (s *CaptainAPIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	handler := s.Server.Handler
 	handler = filters.WithKubeAPIServer(handler, s.KubernetesClient.Config(), &errorResponder{})
 
-	/*if s.Config.MultiClusterOptions.Enable {
+	if s.Config.MultiClusterOptions.Enable {
 		clusterDispatcher := dispatch.NewClusterDispatch(s.InformerFactory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters())
 		handler = filters.WithMultipleClusterDispatcher(handler, clusterDispatcher)
-	}*/
+	}
 
 	handler = filters.WithRequestInfo(handler, requestInfoResolver)
 
