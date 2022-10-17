@@ -25,7 +25,6 @@ func WithMultipleClusterDispatcher(handler http.Handler, dispatch dispatch.Dispa
 			return
 		}
 
-		fmt.Println(info.APIPrefix)
 		if info.Cluster == "" || len(info.APIPrefix) == 0 {
 			handler.ServeHTTP(w, req)
 		} else {
