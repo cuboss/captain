@@ -148,7 +148,7 @@ func TestHandleListResources(t *testing.T) {
 	handler := New(resource.NewResourceProcessor(factory, nil))
 
 	for _, test := range tests {
-		res, err := handler.resourceProviderAlpha1.List(test.resource, test.namespace, test.query)
+		res, err := handler.resourceProviderAlpha1.List("", "", test.resource, test.namespace, test.query)
 		if err != nil {
 			t.Errorf("failed with %s", err.Error())
 		}
