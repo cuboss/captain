@@ -83,7 +83,7 @@ func (s *CaptainAPIServer) installCaptainAPIs() {
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
 
 	// captain apis for kube resources
-	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache))
+	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache, s.Config))
 
 	// captain apis for captain cluster resources
 	urlruntime.Must(resV1alpha1.AddToContainer(s.container, s.InformerFactory, s.KubernetesClient, s.KubeRuntimeCache))
@@ -100,7 +100,7 @@ func (s *CaptainAPIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	handler = filters.WithKubeAPIServer(handler, s.KubernetesClient.Config(), &errorResponder{})
 
 	if s.Config.MultiClusterOptions.Enable {
-		clusterDispatcher := dispatch.NewClusterDispatch(s.InformerFactory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters())
+		clusterDispatcher := dispatch.NewClusterDispatch(s.InformerFactory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters(), s.Config.MultiClusterOptions)
 		handler = filters.WithMultipleClusterDispatcher(handler, clusterDispatcher)
 	}
 

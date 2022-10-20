@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	DefaultResyncPeriod    = 120 * time.Second
-	DefaultHostClusterName = "host"
+	DefaultResyncPeriod      = 120 * time.Second
+	DefaultHostClusterName   = "host"
+	DefaultRegionClusterName = "host"
 )
 
 type Options struct {
@@ -22,6 +23,9 @@ type Options struct {
 
 	// HostClusterName is the name of the control plane cluster, default set to host.
 	HostClusterName string `json:"hostClusterName,omitempty" yaml:"hostClusterName"`
+
+	// HostRegionName is the region name of the control plane cluster, default set to host.
+	HostRegionName string `json:"hostRegionName,omitempty" yaml:"hostRegionName"`
 }
 
 // NewOptions returns a default nil options
@@ -30,6 +34,7 @@ func NewOptions() *Options {
 		Enable:                        false,
 		ClusterControllerResyncPeriod: DefaultResyncPeriod,
 		HostClusterName:               DefaultHostClusterName,
+		HostRegionName:                DefaultRegionClusterName,
 	}
 }
 
@@ -55,5 +60,8 @@ func (o *Options) AddFlags(fs *pflag.FlagSet, s *Options) {
 		"Cluster controller resync period to sync cluster resource. e.g. 2m 5m 10m ... default set to 2m")
 
 	fs.StringVar(&o.HostClusterName, "host-cluster-name", s.HostClusterName, "the name of the control plane"+
+		" cluster, default set to host")
+
+	fs.StringVar(&o.HostRegionName, "host-region-name", s.HostRegionName, "the region name of the control plane"+
 		" cluster, default set to host")
 }

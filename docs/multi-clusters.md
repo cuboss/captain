@@ -1,5 +1,5 @@
 # 多集群
-需要在host集群上上先 apply `clusters`的crd: [cluster.captain.io_clusters.yaml](../deploy/crd/cluster/cluster.captain.io_clusters.yaml)
+需要在host集群上先 apply `clusters`的crd: [cluster.captain.io_clusters.yaml](../deploy/crd/cluster/cluster.captain.io_clusters.yaml)
 ## 接口
 ### 获取cluster列表
 GET `/capis/cluster.captain.io/v1alpha1/clusters` \
@@ -81,6 +81,10 @@ curl http://127.0.0.1:9090/regions/wx-tst/clusters/cke-tst/api/v1/namespaces
 
 多集群功能应该允许region为空的情况，比如私有云单云池场景。所以也应该支持这种场景下对应的api路径，例如/clusters/{cluster}/...
 
+# 如何访问主集群
+1. 不带/regions/xx/cluster/xx前缀直接访问captain接口
+2. 使用/cluster/host前缀访问captain接口
+3. 使用/regions/host/cluster/host前缀访问captain接口
 
 
 # cluster结构
