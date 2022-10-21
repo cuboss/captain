@@ -146,6 +146,7 @@ func (s *CaptainAPIServer) waitForResourceSync(ctx context.Context) error {
 
 		{Group: "apps", Version: "v1", Resource: "deployments"},
 		{Group: "apps", Version: "v1", Resource: "statefulsets"},
+		{Group: "apps", Version: "v1", Resource: "replicasets"},
 		{Group: "", Version: "v1", Resource: "pods"},
 		{Group: "batch", Version: "v1", Resource: "jobs"},
 		{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
