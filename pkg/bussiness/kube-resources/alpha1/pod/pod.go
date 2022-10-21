@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+const (
+	fieldNodeName    = "nodeName"
+	fieldPVCName     = "pvcName"
+	fieldServiceName = "serviceName"
+)
+
 type podProvider struct {
 	sharedInformers informers.SharedInformerFactory
 }
@@ -43,28 +49,21 @@ func (pd *podProvider) filter(object runtime.Object, filter query.Filter) bool {
 	if !ok {
 		return false
 	}
-
 	switch filter.Field {
-	case query.FieldOwnerKind:
-		fallthrough
-	case query.FieldOwnerName:
-		kind := filter.Field
-		name := filter.Value
-		if !pd.podBelongTo(pod, string(kind), string(name)) {
+	case query.FieldOwner:
+		kn := strings.Split(string(filter.Value), "=")
+		if len(kn) != 2 {
 			return false
 		}
-	case "nodeName":
-		if pod.Spec.NodeName != string(filter.Value) {
-			return false
-		}
-	case "pvcName":
-		if !podBindPVC(pod, string(filter.Value)) {
-			return false
-		}
-	case "serviceName":
-		if !pd.podBelongToService(pod, string(filter.Value)) {
-			return false
-		}
+		kind := kn[0]
+		name := kn[1]
+		return pd.podBelongTo(pod, kind, name)
+	case fieldNodeName:
+		return pod.Spec.NodeName == string(filter.Value)
+	case fieldPVCName:
+		return podBindPVC(pod, string(filter.Value))
+	case fieldServiceName:
+		return pd.podBelongToService(pod, string(filter.Value))
 	case query.FieldStatus:
 		return strings.Compare(string(pod.Status.Phase), string(filter.Value)) == 0
 	default:
