@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	monitoringv1alpha1 "captain/pkg/capis/monitoring/v1alpha1"
 	"captain/pkg/capis/version"
 	"captain/pkg/informers"
 	captainserverconfig "captain/pkg/server/config"
@@ -13,6 +14,7 @@ import (
 	resAlpha1 "captain/pkg/server/resources/alpha1"
 	resV1alpha1 "captain/pkg/server/resources/v1alpha1"
 	"captain/pkg/simple/client/k8s"
+	"captain/pkg/simple/client/monitoring"
 
 	"github.com/emicklei/go-restful"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -42,6 +44,9 @@ type CaptainAPIServer struct {
 
 	// controller-runtime client
 	KubeRuntimeCache cache.Cache
+
+	// monitoring client set
+	MonitoringClient monitoring.Interface
 }
 
 type errorResponder struct{}
@@ -79,8 +84,9 @@ func (s *CaptainAPIServer) PrepareRun(stopCh <-chan struct{}) error {
 //
 //	any attempt to list objects using listers will get empty results.
 func (s *CaptainAPIServer) installCaptainAPIs() {
-	// nataive apis of kubernetes
+	// captain apis
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
+	urlruntime.Must(monitoringv1alpha1.AddToContainer(s.container, s.MonitoringClient))
 
 	// captain apis for kube resources
 	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache, s.Config))

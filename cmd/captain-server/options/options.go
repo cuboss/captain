@@ -1,7 +1,6 @@
 package options
 
 import (
-	"captain/pkg/server"
 	"flag"
 	"fmt"
 	"net/http"
@@ -10,8 +9,10 @@ import (
 	"k8s.io/klog"
 
 	"captain/pkg/informers"
+	"captain/pkg/server"
 	captainserverconfig "captain/pkg/server/config"
 	"captain/pkg/simple/client/k8s"
+	"captain/pkg/simple/client/monitoring/prometheus"
 	genericoptions "captain/pkg/simple/server/options"
 
 	cliflag "k8s.io/component-base/cli/flag"
@@ -40,8 +41,8 @@ func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
 	fs.BoolVar(&s.DebugMode, "debug", false, "Don't enable this if you don't know what it means.")
 	s.GenericServerRunOptions.AddFlags(fs, s.GenericServerRunOptions)
 	s.KubernetesOptions.AddFlags(fss.FlagSet("kubernetes"), s.KubernetesOptions)
-
 	s.RedisOptions.AddFlags(fss.FlagSet("redis"), s.RedisOptions)
+	s.MonitoringOptions.AddFlags(fss.FlagSet("monitoring"), s.MonitoringOptions)
 
 	fs = fss.FlagSet("klog")
 	local := flag.NewFlagSet("klog", flag.ExitOnError)
@@ -71,8 +72,17 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*server.Captain
 	captainServer := &http.Server{
 		Addr: fmt.Sprintf(":%d", s.GenericServerRunOptions.InsecurePort),
 	}
-
 	apiServer.Server = captainServer
+
+	if s.MonitoringOptions != nil && len(s.MonitoringOptions.Endpoint) > 0 {
+		monitoringClient, err := prometheus.NewPrometheus(s.MonitoringOptions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to prometheus, please check prometheus status, error: %v", err)
+		}
+		apiServer.MonitoringClient = monitoringClient
+	} else {
+		klog.Warning("moinitoring service address in configuration MUST not be empty, please check configmap/captain-config in captain-system namespace")
+	}
 
 	return apiServer, nil
 }

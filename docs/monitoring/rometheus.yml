@@ -1,0 +1,16 @@
+groups:
+- name: node.rules
+  rules:
+  - expr: sum by(cpu, instance, job, namespace, pod) (node_cpu_seconds_total{job="node-exporter",mode=~"user|nice|system|iowait|irq|softirq"})
+    record: node_cpu_used_seconds_total
+  - expr: avg(irate(node_cpu_used_seconds_total{job="node-exporter"}[5m]))
+    record: :node_cpu_utilisation:avg1m
+  - expr: '1 - sum(node_memory_MemFree_bytes{job="node-exporter"} + node_memory_Cached_bytes{job="node-exporter"} + node_memory_Buffers_bytes{job="node-exporter"} + node_memory_SReclaimable_bytes{job="node-exporter"}) / sum(node_memory_MemTotal_bytes{job="node-exporter"})'
+    record: ':node_memory_utilisation:'
+  - expr: 'sum by(node, host_ip, role) ((node_memory_MemFree_bytes{job="node-exporter"} + node_memory_Cached_bytes{job="node-exporter"} + node_memory_Buffers_bytes{job="node-exporter"} + node_memory_SReclaimable_bytes{job="node-exporter"}) * on(namespace, pod) group_left(node, host_ip, role) node_namespace_pod:kube_pod_info:)'
+    record: 'node:node_memory_bytes_available:sum'
+  - expr: 'sum by(node, host_ip, role) (node_memory_MemTotal_bytes{job="node-exporter"} * on(namespace, pod) group_left(node, host_ip, role) node_namespace_pod:kube_pod_info:)'
+    record: 'node:node_memory_bytes_total:sum'
+  - expr: '1 - sum(max by(device, instance) (node_filesystem_avail_bytes{device!~"/dev/loop\\d+",device=~"/dev/.*",job="node-exporter"})) / sum(max by(device, instance) (node_filesystem_size_bytes{device!~"/dev/loop\\d+",device=~"/dev/.*",job="node-exporter"}))'
+    record: cluster:disk_utilization:ratio
+    
