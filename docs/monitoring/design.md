@@ -71,19 +71,113 @@ prometheus:
 # 接口设计
 GET /capis/monitoring.captain.io/v1alpha1/{level}
 
+GET /capis/monitoring.captain.io/v1alpha1/{level}/{resourcename}
+
 level:
 - cluster
-- node
+- nodes
 - workload
 - pod
 ## 参数
-metrics_filter: 查询参数，value是一个正则表达式，指明要查询的一个或多个指标名称。
+| 参数名 | 描述 |
+| --- | --- |
+| 指标/资源查询 |
+| metrics_filter | string<br>用于指定查询的指标名称，是一个正则表达式。比如同时查询节点cpu和磁盘用量:  `node_cpu_usage\|node_disk_size_usage$`. 支持的指标可以参考 metrices.md . |
+| resources_filter | string<br>用于指定查询的资源名称，是一个正则表达式。比如查询节点i-caojnter 和 i-cmu82og: `i-caojnter\|i-cmu82ogj$`. |
+| 范围查询 |  |
+| start | string<br>查询指定时间范围内指标时，start和end表示开始和结束的时间戳， Unix时间格式，如：1559347200. |
+| end | string<br>查询指定时间范围内指标时，start和end表示开始和结束的时间戳， Unix时间格式，如：1559347200. |
+| step | string<br>Default: "10m"<br>在start和end范围中，以step为时间间隔检索数据。 格式为 [0-9]+[smhdwy]. 默认为10m。 |
+| 指定时间 |  |
+| time | string<br>Unix时间格式的时间戳。检索单个时间点的度量数据。如果为空，默认为当前时间。time和start、end、step的组合是互斥的。 |
+| 分页排序 | |
+| sort_metric | string<br>根据指定的指标进行排序。不适用于提供了start和end参数的情况 |
+| sort_type | string<br>Default: "desc."<br>排序类型，升序/降序. One of asc, desc. |
+| page | integer<br>页码。这个字段对每个指标的结果数据进行分页，然后返回一个特定的页面。例如，将page设置为2将返回第二个页面。它只适用于排序的度量数据。 |
+| limit | integer<br>每页返回的记录条数，默认值5 |
+
+注： metrics_filter: 查询参数，value是一个正则表达式，指明要查询的一个或多个指标名称。
 ```
 eg:
     metrics_filter=cluster_cpu_usage|cluster_cpu_total|cluster_memory_usage_wo_cache|cluster_memory_total|cluster_disk_size_usage|cluster_disk_size_capacity|cluster_pod_running_count|cluster_pod_quota$
 ```
 当前支持的指标名称：
-- cluster_cpu_usage
+    参见metrics.md
+
+返回内容：
+
+精确时间点查询：
+```json
+{
+    "results": [
+        {
+            "metric_name": "node_pod_count",
+            "data": {
+                "resultType": "vector",
+                "result": [
+                    {
+                        "metric": {
+                            "__name__": "node:pod_count:sum",
+                            "node": "192.168.0.1"
+                        },
+                        "value": [
+                            1666856591.888,
+                            "28"
+                        ],
+                        "min_value": "",
+                        "max_value": "",
+                        "avg_value": "",
+                        "sum_value": "",
+                        "fee": "",
+                        "resource_unit": "",
+                        "currency_unit": ""
+                    }
+                ]
+            }
+        },
+    ]
+}
+```
+
+范围查询：
+```json
+{
+    "results": [
+        {
+            "metric_name": "cluster_cpu_total",
+            "data": {
+                "resultType": "matrix",
+                "result": [
+                    {
+                        "values": [
+                            [
+                                1666856634,
+                                "56"
+                            ],
+                            [
+                                1666856934,
+                                "56"
+                            ],
+                            [
+                                1666857234,
+                                "56"
+                            ]
+                        ],
+                        "min_value": "",
+                        "max_value": "",
+                        "avg_value": "",
+                        "sum_value": "",
+                        "fee": "",
+                        "resource_unit": "",
+                        "currency_unit": ""
+                    }
+                ]
+            }
+        }
+    ]
+}
+```
+
 GetNamedMetricsOverTime 和 GetNamedMetrics 差别？\
 GetNamedMetrics 返回Vector，获取的是瞬时的指标数据。\
 GetNamedMetricsOverTime 返回Matrix，获取的是一段时间内的多个指标数据。\

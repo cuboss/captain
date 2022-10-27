@@ -31,6 +31,16 @@ func (h handler) handleClusterMetricsQuery(req *restful.Request, resp *restful.R
 	h.handleNamedMetricsQuery(resp, opt)
 }
 
+func (h handler) handleNodeMetricsQuery(req *restful.Request, resp *restful.Response) {
+	params := parseRequestParams(req)
+	opt, err := h.makeQueryOptions(params, monitoring.LevelNode)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+		return
+	}
+	h.handleNamedMetricsQuery(resp, opt)
+}
+
 func (h handler) handleNamedMetricsQuery(resp *restful.Response, q queryOptions) {
 	var res model.Metrics
 
@@ -56,6 +66,7 @@ func (h handler) handleNamedMetricsQuery(resp *restful.Response, q queryOptions)
 		res = h.mo.GetNamedMetrics(metrics, q.time, q.option)
 		res = *res.Sort(q.target, q.order, q.identifier).Page(q.page, q.limit)
 		if q.shouldSort() {
+			res = *res.Sort(q.target, q.order, q.identifier).Page(q.page, q.limit)
 		}
 	}
 	resp.WriteAsJson(res)

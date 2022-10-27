@@ -16,3 +16,15 @@ var ClusterMetrics = []string{
 	"cluster_disk_size_capacity",
 	"cluster_disk_size_available",
 }
+
+var NodeMetrics = []string{
+	"node_cpu_utilisation",
+	"node_cpu_usage",
+	"node_cpu_total",
+	"node_memory_utilisation",
+	"node_memory_available",
+	"node_memory_total",
+	"node_memory_usage_wo_cache",
+	"node_pod_count",
+	"node_pod_quota",
+}
