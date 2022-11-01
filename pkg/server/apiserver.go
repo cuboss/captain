@@ -103,7 +103,7 @@ func (s *CaptainAPIServer) installCaptainAPIs() {
 // 通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
 func (s *CaptainAPIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	requestInfoResolver := &request.RequestInfoFactory{
-		APIPrefixes: sets.NewString("api", "apis"),
+		APIPrefixes: sets.NewString("api", "apis", "capis"),
 	}
 
 	handler := s.Server.Handler

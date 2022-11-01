@@ -8,6 +8,7 @@ import (
 	clusterv1alpha1 "captain/apis/cluster/v1alpha1"
 	clusterinformer "captain/pkg/client/informers/externalversions/cluster/v1alpha1"
 	"captain/pkg/server/request"
+	"captain/pkg/server/runtime"
 	"captain/pkg/simple/client/multicluster"
 	"captain/pkg/utils/clusterclient"
 
@@ -18,8 +19,7 @@ import (
 	"k8s.io/klog"
 )
 
-// const proxyURLFormat = "/api/v1/namespaces/captain-system/services/:captain-apiserver:/proxy%s"
-const proxyURLFormat = "%s"
+const proxyURLFormat = "/api/v1/namespaces/captain-system/services/:captain-server:9090/proxy%s"
 
 // Dispatcher defines how to forward request to designated cluster based on cluster name
 // This should only be used in host cluster when multicluster mode enabled, use in any other cases may cause
@@ -89,7 +89,9 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 
 		u.Scheme = innCluster.KubernetesURL.Scheme
 		u.Host = innCluster.KubernetesURL.Host
-		u.Path = fmt.Sprintf(proxyURLFormat, u.Path)
+		if info.APIPrefix == runtime.ApiRoot {
+			u.Path = fmt.Sprintf(proxyURLFormat, u.Path)
+		}
 		transport = innCluster.Transport
 
 		// The reason we need this is kube-apiserver doesn't behave like a standard proxy, it will strip
