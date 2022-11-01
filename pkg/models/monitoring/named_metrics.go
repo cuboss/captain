@@ -28,3 +28,31 @@ var NodeMetrics = []string{
 	"node_pod_count",
 	"node_pod_quota",
 }
+
+var WorkloadMetrics = []string{
+	"workload_cpu_usage",
+	"workload_memory_usage",
+	"workload_memory_usage_wo_cache",
+
+	"workload_deployment_replica",
+	"workload_deployment_replica_available",
+	"workload_statefulset_replica",
+	"workload_statefulset_replica_available",
+	"workload_daemonset_replica",
+	"workload_daemonset_replica_available",
+	"workload_deployment_unavailable_replicas_ratio",
+	"workload_daemonset_unavailable_replicas_ratio",
+	"workload_statefulset_unavailable_replicas_ratio",
+}
+
+var PodMetrics = []string{
+	"pod_cpu_usage",
+	"pod_memory_usage",
+	"pod_memory_usage_wo_cache",
+}
+
+var ContainerMetrics = []string{
+	"container_cpu_usage",
+	"container_memory_usage",
+	"container_memory_usage_wo_cache",
+}

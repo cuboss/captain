@@ -43,10 +43,10 @@ func NewPrometheus(options *Options) (monitoring.Interface, error) {
 
 	client, err := api.NewClient(cfg)
 
-	return prometheus{client: apiv1.NewAPI(client)}, err
+	return &prometheus{client: apiv1.NewAPI(client)}, err
 }
 
-func (p prometheus) GetNamedMetrics(metrics []string, ts time.Time, o monitoring.QueryOption) []monitoring.Metric {
+func (p *prometheus) GetNamedMetrics(metrics []string, ts time.Time, o monitoring.QueryOption) []monitoring.Metric {
 	var res []monitoring.Metric
 	var mtx sync.Mutex
 	var wg sync.WaitGroup
@@ -79,7 +79,7 @@ func (p prometheus) GetNamedMetrics(metrics []string, ts time.Time, o monitoring
 	return res
 }
 
-func (p prometheus) GetNamedMetricsOverTime(metrics []string, start, end time.Time, step time.Duration, o monitoring.QueryOption) []monitoring.Metric {
+func (p *prometheus) GetNamedMetricsOverTime(metrics []string, start, end time.Time, step time.Duration, o monitoring.QueryOption) []monitoring.Metric {
 	var res []monitoring.Metric
 	var mtx sync.Mutex
 	var wg sync.WaitGroup

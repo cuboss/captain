@@ -7,13 +7,15 @@ const (
 	LevelNode
 	LevelWorkload
 	LevelPod
+	LevelContainer
 )
 
 var MeteringLevelMap = map[string]int{
-	"LevelCluster":  LevelCluster,
-	"LevelNode":     LevelNode,
-	"LevelWorkload": LevelWorkload,
-	"LevelPod":      LevelPod,
+	"LevelCluster":   LevelCluster,
+	"LevelNode":      LevelNode,
+	"LevelWorkload":  LevelWorkload,
+	"LevelPod":       LevelPod,
+	"LevelContainer": LevelContainer,
 }
 
 type QueryOption interface {
@@ -25,8 +27,13 @@ type QueryOptions struct {
 
 	NamespacedResourcesFilter string
 	ResourceFilter            string
-	NodeName                  string
-	PodName                   string
+
+	NamespaceName string
+	NodeName      string
+	WorkloadKind  string
+	WorkloadName  string
+	PodName       string
+	ContainerName string
 }
 
 func NewQueryOptions() *QueryOptions {
@@ -50,15 +57,52 @@ func (no NodeOption) Apply(o *QueryOptions) {
 	o.ResourceFilter = no.ResourceFilter
 }
 
+type WorkloadOption struct {
+	ResourceFilter string
+	NamespaceName  string
+	WorkloadKind   string
+}
+
+func (wo WorkloadOption) Apply(o *QueryOptions) {
+	o.Level = LevelWorkload
+	o.ResourceFilter = wo.ResourceFilter
+	o.NamespaceName = wo.NamespaceName
+	o.WorkloadKind = wo.WorkloadKind
+}
+
 type PodOption struct {
 	NamespacedResourcesFilter string
 	ResourceFilter            string
-	PodName                   string
+
+	NodeName      string
+	NamespaceName string
+	WorkloadKind  string
+	WorkloadName  string
+	PodName       string
 }
 
 func (po PodOption) Apply(o *QueryOptions) {
 	o.Level = LevelPod
 	o.NamespacedResourcesFilter = po.NamespacedResourcesFilter
 	o.ResourceFilter = po.ResourceFilter
+	o.NodeName = po.NodeName
+	o.NamespaceName = po.NamespaceName
+	o.WorkloadKind = po.WorkloadKind
+	o.WorkloadName = po.WorkloadName
 	o.PodName = po.PodName
+}
+
+type ContainerOption struct {
+	ResourceFilter string
+	NamespaceName  string
+	PodName        string
+	ContainerName  string
+}
+
+func (co ContainerOption) Apply(o *QueryOptions) {
+	o.Level = LevelContainer
+	o.ResourceFilter = co.ResourceFilter
+	o.NamespaceName = co.NamespaceName
+	o.PodName = co.PodName
+	o.ContainerName = co.ContainerName
 }

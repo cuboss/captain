@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/emicklei/go-restful"
@@ -37,9 +38,16 @@ type reqParams struct {
 	page   string
 	limit  string
 
-	metricFilter   string
-	resourceFilter string
-	nodeName       string
+	metricFilter              string
+	resourceFilter            string
+	namespacedResourcesFilter string
+
+	nodeName      string
+	namespaceName string
+	workloadKind  string
+	workloadName  string
+	podName       string
+	containerName string
 }
 
 func parseRequestParams(req *restful.Request) reqParams {
@@ -56,7 +64,18 @@ func parseRequestParams(req *restful.Request) reqParams {
 
 	r.resourceFilter = req.QueryParameter("resources_filter")
 	r.metricFilter = req.QueryParameter("metrics_filter")
+	// namespacedResourcesFilter supports only <namespace>/<pod_name>|<namespace>/<pod_name> format
+	// which is different from resources_filter or metrics_filter, so wipe off the possible $ at the end.
+	r.namespacedResourcesFilter = strings.TrimRight(req.QueryParameter("namespaced_resources_filter"), "$")
+
 	r.nodeName = req.PathParameter("node")
+	r.namespaceName = req.PathParameter("namespace")
+	r.workloadKind = req.PathParameter("kind")
+	r.workloadName = req.PathParameter("workload")
+	//will be overide if "pod" in the path parameter.
+	r.podName = req.QueryParameter("pod")
+	r.podName = req.PathParameter("pod")
+	r.containerName = req.PathParameter("container")
 	return r
 }
 
@@ -100,6 +119,7 @@ func (h handler) makeQueryOptions(r reqParams, lvl monitoring.Level) (q queryOpt
 	case monitoring.LevelCluster:
 		q.option = monitoring.ClusterOption{}
 		q.namedMetrics = model.ClusterMetrics
+
 	case monitoring.LevelNode:
 		q.identifier = model.IdentifierNode
 		q.option = monitoring.NodeOption{
@@ -107,6 +127,38 @@ func (h handler) makeQueryOptions(r reqParams, lvl monitoring.Level) (q queryOpt
 			NodeName:       r.nodeName,
 		}
 		q.namedMetrics = model.NodeMetrics
+
+	case monitoring.LevelWorkload:
+		q.identifier = model.IdentifierWorkload
+		q.option = monitoring.WorkloadOption{
+			ResourceFilter: r.resourceFilter,
+			NamespaceName:  r.namespaceName,
+			WorkloadKind:   r.workloadKind,
+		}
+		q.namedMetrics = model.WorkloadMetrics
+
+	case monitoring.LevelPod:
+		q.identifier = model.IdentifierPod
+		q.option = monitoring.PodOption{
+			NamespacedResourcesFilter: r.namespacedResourcesFilter,
+			ResourceFilter:            r.resourceFilter,
+			NodeName:                  r.nodeName,
+			NamespaceName:             r.namespaceName,
+			WorkloadKind:              r.workloadKind,
+			WorkloadName:              r.workloadName,
+			PodName:                   r.podName,
+		}
+		q.namedMetrics = model.PodMetrics
+
+	case monitoring.LevelContainer:
+		q.identifier = model.IdentifierContainer
+		q.option = monitoring.ContainerOption{
+			ResourceFilter: r.resourceFilter,
+			NamespaceName:  r.namespaceName,
+			PodName:        r.podName,
+			ContainerName:  r.containerName,
+		}
+		q.namedMetrics = model.ContainerMetrics
 	}
 
 	// Parse time params

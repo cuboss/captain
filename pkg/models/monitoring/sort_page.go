@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	IdentifierNode     = "node"
-	IdentifierWorkload = "workload"
-	IdentifierPod      = "pod"
+	IdentifierNode      = "node"
+	IdentifierWorkload  = "workload"
+	IdentifierPod       = "pod"
+	IdentifierContainer = "container"
 
 	OrderAscending  = "asc"
 	OrderDescending = "desc"

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	monitoringv1alpha1 "captain/pkg/capis/monitoring/v1alpha1"
+	"captain/pkg/capis/openapi"
 	"captain/pkg/capis/version"
 	"captain/pkg/informers"
 	captainserverconfig "captain/pkg/server/config"
@@ -93,6 +94,9 @@ func (s *CaptainAPIServer) installCaptainAPIs() {
 
 	// captain apis for captain cluster resources
 	urlruntime.Must(resV1alpha1.AddToContainer(s.container, s.InformerFactory, s.KubernetesClient, s.KubeRuntimeCache))
+
+	// open api
+	urlruntime.Must(openapi.AddToContainer(s.container))
 
 }
 
