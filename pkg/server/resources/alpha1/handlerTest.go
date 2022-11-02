@@ -6,6 +6,7 @@ import (
 
 	"captain/pkg/bussiness/kube-resources/alpha1/resource"
 	"captain/pkg/informers"
+	"captain/pkg/server/config"
 	"captain/pkg/test/fake"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
@@ -145,7 +146,7 @@ func TestHandleListResources(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	handler := New(resource.NewResourceProcessor(factory, nil))
+	handler := New(resource.NewResourceProcessor(factory, nil, config.New()))
 
 	for _, test := range tests {
 		res, err := handler.resourceProviderAlpha1.List("", "", test.resource, test.namespace, test.query)

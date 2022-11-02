@@ -8,6 +8,7 @@ import (
 
 	clusterv1alpha1 "captain/apis/cluster/v1alpha1"
 	clusterinformer "captain/pkg/client/informers/externalversions/cluster/v1alpha1"
+	"captain/pkg/simple/client/multicluster"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -43,6 +44,8 @@ type clusterClients struct {
 
 	// build a in memory cluster cache to speed things up
 	innerClusters map[string]*innerCluster
+
+	options *multicluster.Options
 }
 
 func (c *clusterClients) IsHostCluster(cluster *clusterv1alpha1.Cluster) bool {
@@ -74,6 +77,10 @@ func (c *clusterClients) GetClusterKubeconfig(clusterName string) (string, error
 func (c *clusterClients) Get(regionName, clusterName string) (*clusterv1alpha1.Cluster, error) {
 	c.RLock()
 	defer c.RUnlock()
+	if regionName == c.options.HostRegionName {
+		regionName = ""
+	}
+
 	if len(regionName) > 0 {
 		clusterName = fmt.Sprintf("%s-%s", regionName, clusterName)
 	}
@@ -109,7 +116,7 @@ func (c *clusterClients) GetClientSet(regionName, clusterName string) (*kubernet
 var c *clusterClients
 var lock sync.Mutex
 
-func NewClusterClients(clusterInformer clusterinformer.ClusterInformer) ClusterClients {
+func NewClusterClients(clusterInformer clusterinformer.ClusterInformer, options *multicluster.Options) ClusterClients {
 
 	if c == nil {
 		lock.Lock()
@@ -123,6 +130,7 @@ func NewClusterClients(clusterInformer clusterinformer.ClusterInformer) ClusterC
 			clusterMap:        map[string]*clusterv1alpha1.Cluster{},
 			clusterKubeconfig: map[string]string{},
 			innerClusters:     make(map[string]*innerCluster),
+			options:           options,
 		}
 
 		clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

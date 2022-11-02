@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"captain/apis/cluster/v1alpha1"
 	"captain/pkg/bussiness/captain-resources/v1alpha1/resource"
@@ -54,9 +53,6 @@ var (
 		},
 	}
 )
-
-// default re-sync period for all informer factories
-const defaultResync = 5 * time.Second
 
 func prepare() (informers.CapInformerFactory, crd.CrdInterface, error) {
 	cli := fake.NewSimpleClientset()

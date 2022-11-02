@@ -24,6 +24,7 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1/statefulset"
 	"captain/pkg/bussiness/kube-resources/alpha1/storageclass"
 	"captain/pkg/informers"
+	"captain/pkg/server/config"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
 	"captain/pkg/utils/clusterclient"
@@ -67,7 +68,7 @@ type ResourceProcessor struct {
 	multiClusterResourceProcessors map[schema.GroupVersionResource]alpha1.MultiClusterKubeResProvider
 }
 
-func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cache) *ResourceProcessor {
+func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cache, config *config.Config) *ResourceProcessor {
 	namespacedResourceProcessors := make(map[schema.GroupVersionResource]alpha1.KubeResProvider)
 	clusterResourceProcessors := make(map[schema.GroupVersionResource]alpha1.KubeResProvider)
 
@@ -97,7 +98,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 
 	// multi cluster native kube resource
 	multiClusterResourceProcessors := make(map[schema.GroupVersionResource]alpha1.MultiClusterKubeResProvider)
-	clients := clusterclient.NewClusterClients(factory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters())
+	clients := clusterclient.NewClusterClients(factory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters(), config.MultiClusterOptions)
 	multiClusterResourceProcessors[NamespaceGVR] = namespace.NewMCResProvider(clients)
 	multiClusterResourceProcessors[NodeGVR] = node.NewMCResProvider(clients)
 	multiClusterResourceProcessors[ClusterroleGVR] = clusterrole.NewMCResProvider(clients)

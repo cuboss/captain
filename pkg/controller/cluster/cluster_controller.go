@@ -54,7 +54,7 @@ const (
 
 	// kubefedNamespace  = "kube-federation-system"
 	// openpitrixRuntime = "openpitrix.io/runtime"
-	captainManaged    = "captain.io/managed"
+	captainManaged = "captain.io/managed"
 
 	// proxy format
 	proxyFormat = "%s/api/v1/namespaces/captain-system/services/:captain-apiserver:80/proxy/%s"
@@ -77,7 +77,7 @@ var hostCluster = &clusterv1alpha1.Cluster{
 		},
 		Labels: map[string]string{
 			clusterv1alpha1.HostCluster: "",
-			captainManaged:             "true",
+			captainManaged:              "true",
 		},
 	},
 	Spec: clusterv1alpha1.ClusterSpec{
@@ -370,7 +370,7 @@ func (c *clusterController) probeClusters() error {
 			}
 
 			ct.Status.Conditions = cluster.Status.Conditions
-			ct, err = c.clusterClient.Update(context.TODO(), ct, metav1.UpdateOptions{})
+			_, err = c.clusterClient.Update(context.TODO(), ct, metav1.UpdateOptions{})
 			return err
 		})
 		if err != nil {
@@ -571,7 +571,6 @@ func (c *clusterController) tryToFetchCaptainComponents(host string, transport h
 	return configz, nil
 }
 
-//
 func (c *clusterController) tryFetchCaptainVersion(host string, transport http.RoundTripper) (string, error) {
 	client := http.Client{
 		Transport: transport,

@@ -8,6 +8,8 @@ import (
 	clusterv1alpha1 "captain/apis/cluster/v1alpha1"
 	clusterinformer "captain/pkg/client/informers/externalversions/cluster/v1alpha1"
 	"captain/pkg/server/request"
+	"captain/pkg/server/runtime"
+	"captain/pkg/simple/client/multicluster"
 	"captain/pkg/utils/clusterclient"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -17,8 +19,7 @@ import (
 	"k8s.io/klog"
 )
 
-// const proxyURLFormat = "/api/v1/namespaces/captain-system/services/:captain-apiserver:/proxy%s"
-const proxyURLFormat = "%s"
+const proxyURLFormat = "/api/v1/namespaces/captain-system/services/:captain-server:9090/proxy%s"
 
 // Dispatcher defines how to forward request to designated cluster based on cluster name
 // This should only be used in host cluster when multicluster mode enabled, use in any other cases may cause
@@ -31,8 +32,8 @@ type clusterDispatch struct {
 	clusterclient.ClusterClients
 }
 
-func NewClusterDispatch(clusterInformer clusterinformer.ClusterInformer) Dispatcher {
-	return &clusterDispatch{clusterclient.NewClusterClients(clusterInformer)}
+func NewClusterDispatch(clusterInformer clusterinformer.ClusterInformer, options *multicluster.Options) Dispatcher {
+	return &clusterDispatch{ClusterClients: clusterclient.NewClusterClients(clusterInformer, options)}
 }
 
 // Dispatch dispatch requests to designated cluster
@@ -57,7 +58,8 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 
 	// request cluster is host cluster, no need go through agent
 	if c.IsHostCluster(cluster) {
-		req.URL.Path = strings.Replace(req.URL.Path, fmt.Sprintf("/regions/%s/clusters/%s", info.Region, info.Cluster), "", 1)
+		req.URL.Path = strings.Replace(req.URL.Path, fmt.Sprintf("/regions/%s", info.Region), "", 1)
+		req.URL.Path = strings.Replace(req.URL.Path, fmt.Sprintf("/clusters/%s", info.Cluster), "", 1)
 		handler.ServeHTTP(w, req)
 		return
 	}
@@ -87,7 +89,9 @@ func (c *clusterDispatch) Dispatch(w http.ResponseWriter, req *http.Request, han
 
 		u.Scheme = innCluster.KubernetesURL.Scheme
 		u.Host = innCluster.KubernetesURL.Host
-		u.Path = fmt.Sprintf(proxyURLFormat, u.Path)
+		if info.APIPrefix == runtime.ApiRoot {
+			u.Path = fmt.Sprintf(proxyURLFormat, u.Path)
+		}
 		transport = innCluster.Transport
 
 		// The reason we need this is kube-apiserver doesn't behave like a standard proxy, it will strip

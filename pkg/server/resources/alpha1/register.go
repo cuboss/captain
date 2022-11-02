@@ -4,6 +4,7 @@ import (
 	"captain/pkg/api"
 	"captain/pkg/bussiness/kube-resources/alpha1/resource"
 	"captain/pkg/informers"
+	"captain/pkg/server/config"
 	"captain/pkg/server/runtime"
 	"captain/pkg/unify/query"
 	"net/http"
@@ -28,9 +29,9 @@ func Resource(resource string) schema.GroupResource {
 	return GroupVersion.WithResource(resource).GroupResource()
 }
 
-func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, cache cache.Cache) error {
+func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, cache cache.Cache, config *config.Config) error {
 	webservice := runtime.NewWebService(GroupVersion)
-	handler := New(resource.NewResourceProcessor(factory, cache))
+	handler := New(resource.NewResourceProcessor(factory, cache, config))
 
 	webservice.Route(webservice.GET("/namespaces/{namespace}/resources/{resources}").
 		To(handler.handleListResources).

@@ -1,4 +1,3 @@
-
 package runtime
 
 import (
@@ -7,7 +6,8 @@ import (
 )
 
 const (
-	ApiRootPath = "/capis"
+	ApiRoot     = "capis"
+	ApiRootPath = "/" + ApiRoot
 )
 
 // container holds all webservice of apiserver
@@ -47,7 +47,6 @@ func (cb *ContainerBuilder) Register(funcs ...func(*restful.Container) error) {
 	}
 }
 
-//
 func NewContainerBuilder(funcs ...func(*restful.Container) error) ContainerBuilder {
 	var cb ContainerBuilder
 	cb.Register(funcs...)

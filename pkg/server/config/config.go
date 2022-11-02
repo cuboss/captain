@@ -15,6 +15,7 @@ import (
 	"captain/pkg/constants"
 	"captain/pkg/simple/client/cache"
 	"captain/pkg/simple/client/k8s"
+	"captain/pkg/simple/client/monitoring/prometheus"
 	"captain/pkg/simple/client/multicluster"
 )
 
@@ -109,6 +110,7 @@ type Config struct {
 	KubernetesOptions   *k8s.KubernetesOptions `json:"kubernetes,omitempty" yaml:"kubernetes,omitempty" mapstructure:"kubernetes"`
 	RedisOptions        *cache.Options         `json:"redis,omitempty" yaml:"redis,omitempty" mapstructure:"redis"`
 	MultiClusterOptions *multicluster.Options  `json:"multicluster,omitempty" yaml:"multicluster,omitempty" mapstructure:"multicluster"`
+	MonitoringOptions   *prometheus.Options    `json:"monitoring,omitempty" yaml:"monitoring,omitempty" mapstructure:"monitoring"`
 }
 
 // newConfig creates a default non-empty Config
@@ -117,6 +119,7 @@ func New() *Config {
 		KubernetesOptions:   k8s.NewKubernetesOptions(),
 		RedisOptions:        cache.NewRedisOptions(),
 		MultiClusterOptions: multicluster.NewOptions(),
+		MonitoringOptions:   prometheus.NewPrometheusOptions(),
 	}
 }
 
@@ -164,6 +167,10 @@ func (conf *Config) stripEmptyOptions() {
 
 	if conf.RedisOptions != nil && conf.RedisOptions.Host == "" {
 		conf.RedisOptions = nil
+	}
+
+	if conf.MonitoringOptions != nil && conf.MonitoringOptions.Endpoint == "" {
+		conf.MonitoringOptions = nil
 	}
 
 }

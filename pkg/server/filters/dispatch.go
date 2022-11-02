@@ -9,6 +9,7 @@ import (
 
 	"captain/pkg/server/dispatch"
 	"captain/pkg/server/request"
+	"captain/pkg/server/runtime"
 )
 
 // Multiple cluster dispatcher forward request to desired cluster based on request cluster name
@@ -25,10 +26,19 @@ func WithMultipleClusterDispatcher(handler http.Handler, dispatch dispatch.Dispa
 			return
 		}
 
-		if info.Cluster == "" || len(info.APIPrefix) == 0 {
+		if info.Cluster == "" || len(info.APIPrefix) == 0 || (info.APIPrefix == runtime.ApiRoot && !proxyAPIGroup(info.APIGroup)) {
 			handler.ServeHTTP(w, req)
 		} else {
 			dispatch.Dispatch(w, req, handler)
 		}
 	})
+}
+
+var proxyAPIGroups = map[string]bool{
+	"monitoring.captain.io": true,
+}
+
+// .../capis/monitoring.captain.io/v1alpha1/...
+func proxyAPIGroup(group string) bool {
+	return proxyAPIGroups[group]
 }

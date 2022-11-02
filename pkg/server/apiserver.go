@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	monitoringv1alpha1 "captain/pkg/capis/monitoring/v1alpha1"
+	"captain/pkg/capis/openapi"
 	"captain/pkg/capis/version"
 	"captain/pkg/informers"
 	captainserverconfig "captain/pkg/server/config"
@@ -13,6 +15,7 @@ import (
 	resAlpha1 "captain/pkg/server/resources/alpha1"
 	resV1alpha1 "captain/pkg/server/resources/v1alpha1"
 	"captain/pkg/simple/client/k8s"
+	"captain/pkg/simple/client/monitoring"
 
 	"github.com/emicklei/go-restful"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -42,6 +45,9 @@ type CaptainAPIServer struct {
 
 	// controller-runtime client
 	KubeRuntimeCache cache.Cache
+
+	// monitoring client set
+	MonitoringClient monitoring.Interface
 }
 
 type errorResponder struct{}
@@ -79,28 +85,32 @@ func (s *CaptainAPIServer) PrepareRun(stopCh <-chan struct{}) error {
 //
 //	any attempt to list objects using listers will get empty results.
 func (s *CaptainAPIServer) installCaptainAPIs() {
-	// nataive apis of kubernetes
+	// captain apis
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
+	urlruntime.Must(monitoringv1alpha1.AddToContainer(s.container, s.MonitoringClient))
 
 	// captain apis for kube resources
-	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache))
+	urlruntime.Must(resAlpha1.AddToContainer(s.container, s.InformerFactory, s.KubeRuntimeCache, s.Config))
 
 	// captain apis for captain cluster resources
 	urlruntime.Must(resV1alpha1.AddToContainer(s.container, s.InformerFactory, s.KubernetesClient, s.KubeRuntimeCache))
+
+	// open api
+	urlruntime.Must(openapi.AddToContainer(s.container))
 
 }
 
 // 通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
 func (s *CaptainAPIServer) buildHandlerChain(stopCh <-chan struct{}) {
 	requestInfoResolver := &request.RequestInfoFactory{
-		APIPrefixes: sets.NewString("api", "apis"),
+		APIPrefixes: sets.NewString("api", "apis", "capis"),
 	}
 
 	handler := s.Server.Handler
 	handler = filters.WithKubeAPIServer(handler, s.KubernetesClient.Config(), &errorResponder{})
 
 	if s.Config.MultiClusterOptions.Enable {
-		clusterDispatcher := dispatch.NewClusterDispatch(s.InformerFactory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters())
+		clusterDispatcher := dispatch.NewClusterDispatch(s.InformerFactory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters(), s.Config.MultiClusterOptions)
 		handler = filters.WithMultipleClusterDispatcher(handler, clusterDispatcher)
 	}
 
