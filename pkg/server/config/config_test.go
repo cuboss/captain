@@ -1,13 +1,12 @@
-
 package config
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
 	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 
 	"captain/pkg/simple/client/cache"
@@ -22,7 +21,6 @@ func newTestConfig() (*Config, error) {
 			Password: "Acd13G",
 			DB:       0,
 		},
-
 	}
 	return conf, nil
 }
@@ -76,7 +74,6 @@ func TestStripEmptyOptions(t *testing.T) {
 	var config Config
 
 	config.RedisOptions = &cache.Options{Host: ""}
-
 
 	config.stripEmptyOptions()
 
