@@ -21,28 +21,3 @@
 | node_memory_usage_wo_cache | node| Byte | 节点内存使用量 | node:node_memory_bytes_total:sum{$1} - node:node_memory_bytes_available:sum{$1} |
 | node_pod_count | node| 个 | 节点调度完成 Pod 数量 | node:pod_count:sum{$1} |
 | node_pod_quota | node | 个 | 节点 Pod 最大容纳量| max(kube_node_status_capacity{resource="pods",$1}) by (node) unless on (node) (kube_node_status_condition{condition="Ready",status=~"unknown|false"} > 0) |
-| workload |
-| workload_cpu_usage |  | Core | 工作负载CPU 用量 | round(namespace:workload_cpu_usage:sum{$1}, 0.001) |
-| workload_memory_usage |  | Byte | 工作负载内存使用量（包含缓存） | namespace:workload_memory_usage:sum{$1} |
-| workload_memory_usage_wo_cache |  | Byte | 工作负载内存使用量 | namespace:workload_memory_usage_wo_cache:sum{$1} |
-| workload_net_bytes_transmitted |  | Byte/s | 工作负载网络数据发送速率 | namespace:workload_net_bytes_transmitted:sum_irate{$1} |
-| workload_net_bytes_received |  | Byte/s | 工作负载网络数据接受速率 | namespace:workload_net_bytes_received:sum_irate{$1} |
-| workload_deployment_replica |  |  | Deployment 期望副本数 | label_join(sum (label_join(label_replace(kube_deployment_spec_replicas{$2}, "owner_kind", "Deployment", "", ""), "workload", "", "deployment")) by (namespace, owner_kind, workload), "workload", ":", "owner_kind", "workload") |
-| workload_deployment_replica_available |  |  | Deployment 可用副本数 | label_join(sum (label_join(label_replace(kube_deployment_status_replicas_available{$2}, "owner_kind", "Deployment", "", ""), "workload", "", "deployment")) by (namespace, owner_kind, workload), "workload", ":", "owner_kind", "workload") |
-| workload_statefulset_replica |  |  | StatefulSet 期望副本数 | label_join(sum (label_join(label_replace(kube_statefulset_replicas{$2}, "owner_kind", "StatefulSet", "", ""), "workload", "", "statefulset")) by (namespace, owner_kind, workload), "workload", ":", "owner_kind", "workload") |
-| workload_statefulset_replica_available |  |  | StatefulSet 可用副本数 | label_join(sum (label_join(label_replace(kube_statefulset_status_replicas_current{$2}, "owner_kind", "StatefulSet", "", ""), "workload", "", "statefulset")) by (namespace, owner_kind, workload), "workload", ":", "owner_kind", "workload") |
-| workload_daemonset_replica |  |  | DaemonSet 期望副本数 | label_join(sum (label_join(label_replace(kube_daemonset_status_desired_number_scheduled{$2}, "owner_kind", "DaemonSet", "", ""), "workload", "", "daemonset")) by (namespace, owner_kind, workload), "workload", ":", "owner_kind", "workload") |
-| workload_daemonset_replica_available |  |  | DaemonSet 可用副本数 | label_join(sum (label_join(label_replace(kube_daemonset_status_number_available{$2}, "owner_kind", "DaemonSet", "", ""), "workload", "", "daemonset")) by (namespace, owner_kind, workload), "workload", ":", "owner_kind", "workload") |
-| workload_deployment_unavailable_replicas_ratio |  |  | Deployment 不可用副本数比例 | namespace:deployment_unavailable_replicas:ratio{$1} |
-| workload_daemonset_unavailable_replicas_ratio |  |  | DaemonSet 不可用副本数比例 | namespace:daemonset_unavailable_replicas:ratio{$1} |
-| workload_statefulset_unavailable_replicas_ratio |  |  | StatefulSet 不可用副本数比例 | namespace:statefulset_unavailable_replicas:ratio{$1} |
-| pod |
-|pod_cpu_usage|  | Core | 容器组 CPU 用量 | round(sum by (namespace, pod) (irate(container_cpu_usage_seconds_total{job="kubelet", pod!="", image!=""}[5m])) * on (namespace, pod) group_left(owner_kind, owner_name) kube_pod_owner{$1} * on (namespace, pod) group_left(node) kube_pod_info{$2}, 0.001) |
-|pod_memory_usage|  | Byte | 容器组内存使用量（包含缓存） | sum by (namespace, pod) (container_memory_usage_bytes{job="kubelet", pod!="", image!=""}) * on (namespace, pod) group_left(owner_kind, owner_name) kube_pod_owner{$1} * on (namespace, pod) group_left(node) kube_pod_info{$2} |
-|pod_memory_usage_wo_cache|  | Byte | 容器组内存使用量 | sum by (namespace, pod) (container_memory_working_set_bytes{job="kubelet", pod!="", image!=""}) * on (namespace, pod) group_left(owner_kind, owner_name) kube_pod_owner{$1} * on (namespace, pod) group_left(node) kube_pod_info{$2} |
-|pod_net_bytes_transmitted|  | Byte/s | 容器组网络数据发送速率 | sum by (namespace, pod) (irate(container_network_transmit_bytes_total{pod!="", interface!~"^(cali.+|tunl.+|dummy.+|kube.+|flannel.+|cni.+|docker.+|veth.+|lo.*)", job="kubelet"}[5m])) * on (namespace, pod) group_left(owner_kind, owner_name) kube_pod_owner{$1} * on (namespace, pod) group_left(node) kube_pod_info{$2} |
-|pod_net_bytes_received|  | Byte/s | 容器组网络数据接受速率 | sum by (namespace, pod) (irate(container_network_receive_bytes_total{pod!="", interface!~"^(cali.+|tunl.+|dummy.+|kube.+|flannel.+|cni.+|docker.+|veth.+|lo.*)", job="kubelet"}[5m])) * on (namespace, pod) group_left(owner_kind, owner_name) kube_pod_owner{$1} * on (namespace, pod) group_left(node) kube_pod_info{$2} |
-| container |
-| container_cpu_usage |  |  | 容器 CPU 用量 | round(sum by (namespace, pod, container) (irate(container_cpu_usage_seconds_total{job="kubelet", container!="POD", container!="", image!="", $1}[5m])), 0.001) |
-| container_memory_usage |  |  | 容器内存使用量（包含缓存） | sum by (namespace, pod, container) (container_memory_usage_bytes{job="kubelet", container!="POD", container!="", image!="", $1}) |
-| container_memory_usage_wo_cache |  |  | 容器内存使用量 | sum by (namespace, pod, container) (container_memory_working_set_bytes{job="kubelet", container!="POD", container!="", image!="", $1}) |
