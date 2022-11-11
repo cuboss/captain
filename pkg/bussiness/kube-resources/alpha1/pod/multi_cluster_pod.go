@@ -87,7 +87,6 @@ func (c *PodProviderClient) filter(object runtime.Object, filter query.Filter) b
 	default:
 		return alpha1.DefaultObjectMetaFilter(pod.ObjectMeta, filter)
 	}
-	return false
 }
 
 func (c *PodProviderClient) podBelongTo(item *v1.Pod, kind string, name string) bool {
@@ -118,10 +117,11 @@ func (c *PodProviderClient) podBelongTo(item *v1.Pod, kind string, name string) 
 
 func (c *PodProviderClient) podBelongToDeployment(item *v1.Pod, deploymentName string) bool {
 	var list *appv1.ReplicaSetList
+	var err error
 	if c.replicaSets != nil {
 		list = c.replicaSets
 	} else {
-		list, err := c.AppsV1().ReplicaSets(item.Namespace).List(context.Background(), metav1.ListOptions{})
+		list, err = c.AppsV1().ReplicaSets(item.Namespace).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return false
 		}
@@ -140,10 +140,11 @@ func (c *PodProviderClient) podBelongToDeployment(item *v1.Pod, deploymentName s
 
 func (c *PodProviderClient) podBelongToService(item *v1.Pod, serviceName string) bool {
 	var service *v1.Service
+	var err error
 	if c.service != nil {
 		service = c.service
 	} else {
-		service, err := c.CoreV1().Services(item.Namespace).Get(context.Background(), serviceName, metav1.GetOptions{})
+		service, err = c.CoreV1().Services(item.Namespace).Get(context.Background(), serviceName, metav1.GetOptions{})
 		if err != nil {
 			return false
 		}
