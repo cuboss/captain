@@ -4,12 +4,13 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
+	"strings"
+
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
-	"strings"
 )
 
 const (
@@ -69,7 +70,6 @@ func (pd *podProvider) filter(object runtime.Object, filter query.Filter) bool {
 	default:
 		return alpha1.DefaultObjectMetaFilter(pod.ObjectMeta, filter)
 	}
-	return false
 }
 
 func compareFunc(left, right runtime.Object, field query.Field) bool {
