@@ -68,26 +68,20 @@ func (c *PodProviderClient) filter(object runtime.Object, filter query.Filter) b
 	}
 
 	switch filter.Field {
-	case query.FieldOwnerKind:
-		fallthrough
-	case query.FieldOwnerName:
-		kind := filter.Field
-		name := filter.Value
-		if !c.podBelongTo(pod, string(kind), string(name)) {
+	case query.FieldOwner:
+		kn := strings.Split(string(filter.Value), "=")
+		if len(kn) != 2 {
 			return false
 		}
-	case "nodeName":
-		if pod.Spec.NodeName != string(filter.Value) {
-			return false
-		}
-	case "pvcName":
-		if !podBindPVC(pod, string(filter.Value)) {
-			return false
-		}
-	case "serviceName":
-		if !c.podBelongToService(pod, string(filter.Value)) {
-			return false
-		}
+		kind := kn[0]
+		name := kn[1]
+		return c.podBelongTo(pod, kind, name)
+	case fieldNodeName:
+		return pod.Spec.NodeName == string(filter.Value)
+	case fieldPVCName:
+		return podBindPVC(pod, string(filter.Value))
+	case fieldServiceName:
+		return c.podBelongToService(pod, string(filter.Value))
 	case query.FieldStatus:
 		return strings.Compare(string(pod.Status.Phase), string(filter.Value)) == 0
 	default:

@@ -28,12 +28,12 @@ const (
 	FieldNamespace           = "namespace"
 	FieldStatus              = "status"
 	FieldOwnerReference      = "ownerReference"
+	FieldOwner               = "owner"
 	FieldOwnerKind           = "ownerKind"
 	FieldOwnerName           = "ownerName"
 	FieldRole                = "role"
 	FieldUserfacing          = "userfacing"
-
-	FieldType = "type"
+	FieldType                = "type"
 )
 
 const (
