@@ -68,6 +68,13 @@ eg.
 ```bash
 curl http://127.0.0.1:9090/regions/wx-tst/clusters/cke-tst/api/v1/namespaces
 ```
+## 获取集群adminToken接口
+/capis/cluster.captain.io/v1alpha1/clusters/{clustername}/adminToken\
+eg.
+```
+curl http://127.0.0.1:9090/capis/cluster.captain.io/v1alpha1/clusters/wx-tst-cke-tst/adminToken
+```
+此接口会从目标集群的captain-system命名空间下查询获取当前集群的admin token，若未查询到会自动创建一个。如果不想自动创建可以加`?dryRun=true`的查询参数，此时仅进行查询动作。
 
 ## 注意
 创建Cluster时：
