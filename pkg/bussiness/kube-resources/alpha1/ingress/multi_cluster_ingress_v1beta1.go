@@ -26,7 +26,7 @@ func (pd mcIngressV1beta1Provider) Get(region, cluster, namespace, name string) 
 		return nil, err
 	}
 
-	return cli.ExtensionsV1beta1().Ingresses(namespace).Get(context.Background(), name, metav1.GetOptions{})
+	return cli.NetworkingV1beta1().Ingresses(namespace).Get(context.Background(), name, metav1.GetOptions{})
 }
 
 func (pd mcIngressV1beta1Provider) List(region, cluster, namespace string, query *query.QueryInfo) (*response.ListResult, error) {
@@ -34,7 +34,7 @@ func (pd mcIngressV1beta1Provider) List(region, cluster, namespace string, query
 	if err != nil {
 		return nil, err
 	}
-	list, err := cli.ExtensionsV1beta1().Ingresses(namespace).List(context.Background(), metav1.ListOptions{LabelSelector: query.LabelSelector})
+	list, err := cli.NetworkingV1beta1().Ingresses(namespace).List(context.Background(), metav1.ListOptions{LabelSelector: query.LabelSelector})
 	if err != nil {
 		return nil, err
 	}
