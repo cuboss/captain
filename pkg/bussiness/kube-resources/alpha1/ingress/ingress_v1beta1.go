@@ -13,8 +13,8 @@ type ingressV1beta1Provider struct {
 	sharedInformers informers.SharedInformerFactory
 }
 
-func NewV1beta1IngressProvider(informer informers.SharedInformerFactory) ingressProvider {
-	return ingressProvider{sharedInformers: informer}
+func NewV1beta1IngressProvider(informer informers.SharedInformerFactory) ingressV1beta1Provider {
+	return ingressV1beta1Provider{sharedInformers: informer}
 }
 
 func (ing ingressV1beta1Provider) Get(namespace, name string) (runtime.Object, error) {
