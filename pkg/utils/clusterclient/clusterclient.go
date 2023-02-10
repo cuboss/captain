@@ -33,6 +33,7 @@ type ClusterClients interface {
 	IsClusterReady(cluster *clusterv1alpha1.Cluster) bool
 	GetClusterKubeconfig(string) (string, error)
 	Get(region, cluster string) (*clusterv1alpha1.Cluster, error)
+	GetByClusterName(clustername string) (*clusterv1alpha1.Cluster, error)
 	GetInnerCluster(string) *innerCluster
 	GetClientSet(string, string) (*kubernetes.Clientset, error)
 }
@@ -75,8 +76,6 @@ func (c *clusterClients) GetClusterKubeconfig(clusterName string) (string, error
 }
 
 func (c *clusterClients) Get(regionName, clusterName string) (*clusterv1alpha1.Cluster, error) {
-	c.RLock()
-	defer c.RUnlock()
 	if regionName == c.options.HostRegionName {
 		regionName = ""
 	}
@@ -84,6 +83,12 @@ func (c *clusterClients) Get(regionName, clusterName string) (*clusterv1alpha1.C
 	if len(regionName) > 0 {
 		clusterName = fmt.Sprintf("%s-%s", regionName, clusterName)
 	}
+	return c.GetByClusterName(clusterName)
+}
+
+func (c *clusterClients) GetByClusterName(clusterName string) (*clusterv1alpha1.Cluster, error) {
+	c.RLock()
+	defer c.RUnlock()
 	if cluster, exists := c.clusterMap[clusterName]; exists {
 		return cluster, nil
 	} else {

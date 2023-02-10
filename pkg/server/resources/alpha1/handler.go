@@ -33,9 +33,13 @@ func (h *Handler) handleListResources(request *restful.Request, response *restfu
 		return
 	}
 
+	klog.Error(err)
 	if err != resource.ErrResourceNotSupported {
 		klog.Error(err, resourceType)
 		api.HandleInternalError(response, request, err)
+		return
+	} else {
+		api.HandleNotFound(response, request, err)
 		return
 	}
 
@@ -50,7 +54,7 @@ func (h *Handler) handleListResources(request *restful.Request, response *restfu
 	// 	api.HandleError(response, request, err)
 	// 	return
 	// }
-	response.WriteEntity(result)
+	// response.WriteEntity(result)
 }
 
 func (h *Handler) handleGetResource(request *restful.Request, response *restful.Response) {

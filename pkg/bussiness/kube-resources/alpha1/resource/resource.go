@@ -48,6 +48,7 @@ var (
 	CronJobGVR               = schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobs"}
 	DaemonsetGVR             = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}
 	IngresseGVR              = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}
+	IngresseV1beta1GVR       = schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "ingressesv1beta1"}
 	ServiceGVR               = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
 	ConfigmapGVR             = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
 	PersistentvolumeClaimGVR = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}
@@ -87,6 +88,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	namespacedResourceProcessors[CronJobGVR] = cronjob.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[DaemonsetGVR] = daemonset.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[IngresseGVR] = ingress.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[IngresseV1beta1GVR] = ingress.NewV1beta1IngressProvider(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[ServiceGVR] = service.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[ConfigmapGVR] = configmap.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[PersistentvolumeClaimGVR] = persistentvolumeclaim.New(factory.KubernetesSharedInformerFactory(), factory.SnapshotSharedInformerFactory())
@@ -113,6 +115,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	multiClusterResourceProcessors[CronJobGVR] = cronjob.NewMCResProvider(clients)
 	multiClusterResourceProcessors[DaemonsetGVR] = daemonset.NewMCResProvider(clients)
 	multiClusterResourceProcessors[IngresseGVR] = ingress.NewMCResProvider(clients)
+	multiClusterResourceProcessors[IngresseV1beta1GVR] = ingress.NewMCV1beta1ResProvider(clients)
 	multiClusterResourceProcessors[ServiceGVR] = service.NewMCResProvider(clients)
 	multiClusterResourceProcessors[ConfigmapGVR] = configmap.NewMCResProvider(clients)
 	multiClusterResourceProcessors[PersistentvolumeClaimGVR] = persistentvolumeclaim.NewMCResProvider(clients)
