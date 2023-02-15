@@ -101,7 +101,7 @@ func DefaultObjectMetaCompare(left, right metav1.ObjectMeta, sortBy query.Field)
 		if left.CreationTimestamp.Equal(&right.CreationTimestamp) {
 			return strings.Compare(left.GetName(), right.GetName()) < 0
 		}
-		return left.CreationTimestamp.After(right.CreationTimestamp.Time)
+		return left.CreationTimestamp.Time.Before(right.CreationTimestamp.Time)
 	}
 }
 
