@@ -5,7 +5,6 @@ import (
 	"captain/pkg/api"
 	"captain/pkg/bussiness/captain-resources/v1alpha1/resource"
 	"captain/pkg/unify/query"
-	"fmt"
 
 	"github.com/emicklei/go-restful"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -72,7 +71,6 @@ func (h *Handler) handleUpdateResource(request *restful.Request, response *restf
 
 	obj := getObject(resource)
 	if err := request.ReadEntity(obj); err != nil {
-		fmt.Println("aaa")
 		api.HandleBadRequest(response, request, err)
 		return
 	}

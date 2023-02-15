@@ -6,11 +6,14 @@ import (
 
 	"captain/pkg/api"
 	"captain/pkg/bussiness/captain-resources/v1alpha1/resource"
+	"captain/pkg/capis/cluster/v1alpha1"
 	"captain/pkg/informers"
+	"captain/pkg/server/config"
 	"captain/pkg/server/runtime"
 	"captain/pkg/simple/client/k8s"
 	"captain/pkg/simple/server/errors"
 	"captain/pkg/unify/query"
+	"captain/pkg/utils/clusterclient"
 
 	"github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
@@ -35,7 +38,7 @@ var resoureces = []CaptainResource{
 
 var NamespacedGroupVersions = []schema.GroupVersion{}
 
-func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, client k8s.Client, cache cache.Cache) error {
+func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, client k8s.Client, cache cache.Cache, config *config.Config) error {
 	handler := New(resource.NewResourceProcessor(factory, client.Crd(), cache))
 
 	for _, resource := range resoureces {
@@ -66,6 +69,18 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 			Param(webservice.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
 			Param(webservice.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 			Returns(http.StatusOK, api.StatusOK, nil))
+
+		if resource.Name == "Cluster" {
+			clients := clusterclient.NewClusterClients(factory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters(), config.MultiClusterOptions)
+			h := v1alpha1.NewHandler(clients)
+			webservice.Route(webservice.GET("/clusters/{name}/adminToken").
+				To(h.ClusterAdminToken).
+				Metadata(restfulspec.KeyOpenAPITags, []string{"clusters"}).
+				Doc("get cluster admin token").
+				Param(webservice.PathParameter("name", "name of cluster")).
+				Param(webservice.QueryParameter("dryRun", "dry run request or not").Required(false)).
+				Returns(http.StatusOK, api.StatusOK, nil))
+		}
 
 		webservice.Route(webservice.POST("/{resources}").
 			To(handler.handleCreateResource).
