@@ -32,7 +32,7 @@ func NewHandler(clients clusterclient.ClusterClients) *Handler {
 	return &Handler{ClusterClients: clients}
 }
 
-func (h *Handler) clusterAdminToken(request *restful.Request, response *restful.Response) {
+func (h *Handler) ClusterAdminToken(request *restful.Request, response *restful.Response) {
 	clustername := request.PathParameter("name")
 	cluster, err := h.GetByClusterName(clustername)
 	if err != nil {
