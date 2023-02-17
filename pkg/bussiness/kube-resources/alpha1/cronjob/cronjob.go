@@ -4,10 +4,11 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
+	"strings"
+
 	"k8s.io/api/batch/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
-	"strings"
 )
 
 const (
@@ -25,12 +26,12 @@ func New(informer informers.SharedInformerFactory) cronjobProvider {
 }
 
 func (cj cronjobProvider) Get(namespace, name string) (runtime.Object, error) {
-	return cj.informers.Batch().V1beta1().CronJobs().Lister().CronJobs(namespace).Get(name)
+	return cj.informers.Batch().V1().CronJobs().Lister().CronJobs(namespace).Get(name)
 
 }
 
 func (cj cronjobProvider) List(namespace string, query *query.QueryInfo) (*response.ListResult, error) {
-	raw, err := cj.informers.Batch().V1beta1().CronJobs().Lister().CronJobs(namespace).List(query.GetSelector())
+	raw, err := cj.informers.Batch().V1().CronJobs().Lister().CronJobs(namespace).List(query.GetSelector())
 	if err != nil {
 		return nil, err
 	}
