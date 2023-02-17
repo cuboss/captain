@@ -45,7 +45,8 @@ var (
 	StatefulsetGVR           = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
 	PodGVR                   = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	JobGVR                   = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "jobs"}
-	CronJobGVR               = schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobs"}
+	CronJobGVR               = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "cronjobs"}
+	CronJobBatchV1beta1GVR   = schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobsv1beta1"}
 	DaemonsetGVR             = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}
 	IngresseGVR              = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}
 	IngresseV1beta1GVR       = schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "ingressesv1beta1"}
@@ -86,6 +87,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	namespacedResourceProcessors[StatefulsetGVR] = statefulset.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[JobGVR] = job.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[CronJobGVR] = cronjob.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[CronJobBatchV1beta1GVR] = cronjob.NewBatchV1beta1(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[DaemonsetGVR] = daemonset.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[IngresseGVR] = ingress.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[IngresseV1beta1GVR] = ingress.NewV1beta1IngressProvider(factory.KubernetesSharedInformerFactory())
@@ -113,6 +115,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	multiClusterResourceProcessors[StatefulsetGVR] = statefulset.NewMCResProvider(clients)
 	multiClusterResourceProcessors[JobGVR] = job.NewMCResProvider(clients)
 	multiClusterResourceProcessors[CronJobGVR] = cronjob.NewMCResProvider(clients)
+	multiClusterResourceProcessors[CronJobBatchV1beta1GVR] = cronjob.NewMCBatchV1beta1ResProvider(clients)
 	multiClusterResourceProcessors[DaemonsetGVR] = daemonset.NewMCResProvider(clients)
 	multiClusterResourceProcessors[IngresseGVR] = ingress.NewMCResProvider(clients)
 	multiClusterResourceProcessors[IngresseV1beta1GVR] = ingress.NewMCV1beta1ResProvider(clients)
