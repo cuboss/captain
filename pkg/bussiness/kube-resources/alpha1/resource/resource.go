@@ -10,12 +10,14 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1/deployment"
 	"captain/pkg/bussiness/kube-resources/alpha1/ingress"
 	"captain/pkg/bussiness/kube-resources/alpha1/job"
+	"captain/pkg/bussiness/kube-resources/alpha1/limitrange"
 	"captain/pkg/bussiness/kube-resources/alpha1/namespace"
 	"captain/pkg/bussiness/kube-resources/alpha1/networkpolicy"
 	"captain/pkg/bussiness/kube-resources/alpha1/node"
 	"captain/pkg/bussiness/kube-resources/alpha1/persistentvolume"
 	"captain/pkg/bussiness/kube-resources/alpha1/persistentvolumeclaim"
 	"captain/pkg/bussiness/kube-resources/alpha1/pod"
+	"captain/pkg/bussiness/kube-resources/alpha1/resourcequota"
 	"captain/pkg/bussiness/kube-resources/alpha1/role"
 	"captain/pkg/bussiness/kube-resources/alpha1/rolebinding"
 	"captain/pkg/bussiness/kube-resources/alpha1/secret"
@@ -59,6 +61,8 @@ var (
 	ClusterrolebindingGVR    = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"}
 	RolebindingGVR           = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"}
 	NetworkpolicieGVR        = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies"}
+	ResourceQuotaGVR         = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "resourcequotas"}
+	LimitRangeGVR            = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "limitranges"}
 	ErrResourceNotSupported  = errors.New("resource is not supported")
 )
 
@@ -99,6 +103,8 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	namespacedResourceProcessors[RoleGVR] = role.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[ServiceaccountGVR] = serviceaccount.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[NetworkpolicieGVR] = networkpolicy.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[ResourceQuotaGVR] = resourcequota.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[LimitRangeGVR] = limitrange.New(factory.KubernetesSharedInformerFactory())
 
 	// multi cluster native kube resource
 	multiClusterResourceProcessors := make(map[schema.GroupVersionResource]alpha1.MultiClusterKubeResProvider)
@@ -127,6 +133,8 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	multiClusterResourceProcessors[RoleGVR] = role.NewMCResProvider(clients)
 	multiClusterResourceProcessors[ServiceaccountGVR] = serviceaccount.NewMCResProvider(clients)
 	multiClusterResourceProcessors[NetworkpolicieGVR] = networkpolicy.NewMCResProvider(clients)
+	multiClusterResourceProcessors[ResourceQuotaGVR] = resourcequota.NewMCResProvider(clients)
+	multiClusterResourceProcessors[LimitRangeGVR] = limitrange.NewMCResProvider(clients)
 
 	return &ResourceProcessor{
 		namespacedResourceProcessors:   namespacedResourceProcessors,
