@@ -5,6 +5,7 @@ import (
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
 
+	v1beta1 "k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
 )
@@ -32,5 +33,33 @@ func (ing ingressV1beta1Provider) List(namespace string, query *query.QueryInfo)
 		result = append(result, deploy)
 	}
 
-	return alpha1.DefaultList(result, query, compareFunc, filter), nil
+	return alpha1.DefaultList(result, query, v1beta1CompareFunc, v1beta1Filter), nil
+}
+
+func v1beta1Filter(object runtime.Object, filter query.Filter) bool {
+	ingress, ok := object.(*v1beta1.Ingress)
+	if !ok {
+		return false
+	}
+	return alpha1.DefaultObjectMetaFilter(ingress.ObjectMeta, filter)
+}
+
+func v1beta1CompareFunc(left, right runtime.Object, field query.Field) bool {
+
+	leftIngress, ok := left.(*v1beta1.Ingress)
+	if !ok {
+		return false
+	}
+
+	rightIngress, ok := right.(*v1beta1.Ingress)
+	if !ok {
+		return false
+	}
+
+	switch field {
+	case query.FieldUpdateTime:
+		fallthrough
+	default:
+		return alpha1.DefaultObjectMetaCompare(leftIngress.ObjectMeta, rightIngress.ObjectMeta, field)
+	}
 }

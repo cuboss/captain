@@ -6,7 +6,7 @@ import (
 	"captain/pkg/unify/response"
 	"strings"
 
-	"k8s.io/api/batch/v1beta1"
+	v1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
 )
@@ -45,7 +45,7 @@ func (cj cronjobProvider) List(namespace string, query *query.QueryInfo) (*respo
 }
 
 func filter(object runtime.Object, filter query.Filter) bool {
-	cronJob, ok := object.(*v1beta1.CronJob)
+	cronJob, ok := object.(*v1.CronJob)
 	if !ok {
 		return false
 	}
@@ -60,11 +60,11 @@ func filter(object runtime.Object, filter query.Filter) bool {
 
 func compareFunc(left, right runtime.Object, field query.Field) bool {
 
-	leftcj, ok := left.(*v1beta1.CronJob)
+	leftcj, ok := left.(*v1.CronJob)
 	if !ok {
 		return false
 	}
-	rightcj, ok := right.(*v1beta1.CronJob)
+	rightcj, ok := right.(*v1.CronJob)
 	if !ok {
 		return false
 	}
@@ -82,7 +82,7 @@ func compareFunc(left, right runtime.Object, field query.Field) bool {
 	}
 }
 
-func cronJobStatus(item *v1beta1.CronJob) string {
+func cronJobStatus(item *v1.CronJob) string {
 	if item.Spec.Suspend != nil && *item.Spec.Suspend {
 		return StatusPaused
 	}
