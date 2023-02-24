@@ -46,5 +46,5 @@ func (pd mcIngressV1beta1Provider) List(region, cluster, namespace string, query
 		}
 	}
 
-	return alpha1.DefaultList(result, query, compareFunc, filter), nil
+	return alpha1.DefaultList(result, query, v1beta1CompareFunc, v1beta1Filter), nil
 }

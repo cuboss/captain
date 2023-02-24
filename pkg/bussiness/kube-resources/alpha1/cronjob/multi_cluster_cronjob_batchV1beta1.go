@@ -46,5 +46,5 @@ func (pd mcCronJobBatchV1beta1Provider) List(region, cluster, namespace string, 
 		}
 	}
 
-	return alpha1.DefaultList(result, query, compareFunc, filter), nil
+	return alpha1.DefaultList(result, query, v1Beta1CompareFunc, v1Beta1Filter), nil
 }

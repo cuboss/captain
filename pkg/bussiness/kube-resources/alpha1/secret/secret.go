@@ -4,6 +4,7 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1"
 	"captain/pkg/unify/query"
 	"captain/pkg/unify/response"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
@@ -18,11 +19,11 @@ func New(informer informers.SharedInformerFactory) secretProvider {
 }
 
 func (s secretProvider) Get(namespace, name string) (runtime.Object, error) {
-	return s.sharedInformers.Apps().V1().Deployments().Lister().Deployments(namespace).Get(name)
+	return s.sharedInformers.Core().V1().Secrets().Lister().Secrets(namespace).Get(name)
 }
 
 func (s secretProvider) List(namespace string, query *query.QueryInfo) (*response.ListResult, error) {
-	raw, err := s.sharedInformers.Apps().V1().Deployments().Lister().Deployments(namespace).List(query.GetSelector())
+	raw, err := s.sharedInformers.Core().V1().Secrets().Lister().Secrets(namespace).List(query.GetSelector())
 	if err != nil {
 		return nil, err
 	}
