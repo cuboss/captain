@@ -76,15 +76,15 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 
 	// +region + cluster
 	webservice2 := &restful.WebService{}
-	webservice2.Path("/regions").Produces(restful.MIME_JSON)
-	urlPrefix := "{region}/clusters/{cluster}/capis/" + GroupVersion.String()
+	webservice2.Path("/regions/{region}/clusters/{cluster}/capis/" + GroupVersion.String()).
+		Param(webservice2.PathParameter("region", "region id of cluster")).
+		Param(webservice2.PathParameter("cluster", "name of cluster")).
+		Produces(restful.MIME_JSON)
 
-	webservice2.Route(webservice2.GET(urlPrefix+"/namespaces/{namespace}/resources/{resources}").
+	webservice2.Route(webservice2.GET("/namespaces/{namespace}/resources/{resources}").
 		To(handler.handleListResources).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").
-		Param(webservice2.PathParameter("region", "region id of cluster")).
-		Param(webservice2.PathParameter("cluster", "name of cluster")).
 		Param(webservice2.PathParameter("resources", "namespace scope resource type, e.g: pods,jobs,configmaps,services.")).
 		Param(webservice2.PathParameter("namespace", "namespace")).
 		Param(webservice2.QueryParameter(query.ParameterName, "name used to do filtering").Required(false)).
@@ -93,12 +93,10 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice2.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
 		Param(webservice2.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-	webservice2.Route(webservice2.GET(urlPrefix+"/resources/{resources}").
+	webservice2.Route(webservice2.GET("/resources/{resources}").
 		To(handler.handleListResources).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("core level resources").
-		Param(webservice2.PathParameter("region", "region id of cluster")).
-		Param(webservice2.PathParameter("cluster", "name of cluster")).
 		Param(webservice2.PathParameter("resources", "core scope resource type, e.g: namespaces,nodes.")).
 		Param(webservice2.QueryParameter(query.ParameterName, "name used to do filtering").Required(false)).
 		Param(webservice2.QueryParameter(query.ParameterPage, "page, which is started with 1 not 0, default value is 1.").Required(false).DataFormat("page=%d").DefaultValue("page=1")).
@@ -106,22 +104,18 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice2.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
 		Param(webservice2.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-	webservice2.Route(webservice2.GET(urlPrefix+"/namespaces/{namespace}/resources/{resources}/name/{name}").
+	webservice2.Route(webservice2.GET("/namespaces/{namespace}/resources/{resources}/name/{name}").
 		To(handler.handleGetResource).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").
-		Param(webservice2.PathParameter("region", "region id of cluster")).
-		Param(webservice2.PathParameter("cluster", "name of cluster")).
 		Param(webservice2.PathParameter("resources", "namespace scope resource type, e.g: pods,jobs,configmaps,services.")).
 		Param(webservice2.PathParameter("namespace", "namespace of resources")).
 		Param(webservice2.PathParameter("name", "name of resources")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-	webservice2.Route(webservice2.GET(urlPrefix+"/resources/{resources}/name/{name}").
+	webservice2.Route(webservice2.GET("/resources/{resources}/name/{name}").
 		To(handler.handleGetResource).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").
-		Param(webservice2.PathParameter("region", "region id of cluster")).
-		Param(webservice2.PathParameter("cluster", "name of cluster")).
 		Param(webservice2.PathParameter("resources", "core scope resource type, e.g: namespaces,nodes.")).
 		Param(webservice2.PathParameter("name", "name of resources")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
