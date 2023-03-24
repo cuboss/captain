@@ -1,12 +1,13 @@
 package v1alpha1
 
 import (
+	clusterv1alpha1 "captain/apis/cluster/v1alpha1"
+	"captain/pkg/capis/component/v1alpha1/tools"
 	"captain/pkg/informers"
 	model "captain/pkg/models/component"
 	"captain/pkg/server/config"
 	"captain/pkg/simple/client/helm"
 	"captain/pkg/utils/clusterclient"
-	"encoding/json"
 
 	"github.com/emicklei/go-restful"
 )
@@ -35,18 +36,15 @@ func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restf
 	if err != nil {
 		// TODO return error
 	}
-	kubeConfig := cluster.Spec.Connection.KubeConfig
-	clien, err := helm.NewClient(kubeConfig)
+
+	tools, err := NewComponentTool(cluster, clusterComponent)
 	if err != nil {
 		// TODO return error
 	}
-	// install
-	values := make(map[string]interface{})
-	err = json.Unmarshal([]byte(clusterComponent.Values), &values)
+	release, err := tools.Install()
 	if err != nil {
 		// TODO return error
 	}
-	release, err := clien.Install(clusterComponent.ReleaseName, clusterComponent.ComponentName, clusterComponent.ComponentVersion, clusterComponent.Namespace, values)
 	resp.WriteEntity(release)
 }
 
@@ -59,4 +57,21 @@ func (h Handler) handleClusterComponentUninstall(req *restful.Request, resp *res
 }
 func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restful.Response) {
 	// TODO fetch status
+}
+
+func NewComponentTool(cluster *clusterv1alpha1.Cluster, clusterComponent *model.ClusterComponent) (tools.Interface, error) {
+	kubeConfig := cluster.Spec.Connection.KubeConfig
+	client, err := helm.NewClient(kubeConfig)
+	if err != nil {
+		// TODO return error
+	}
+
+	switch clusterComponent.ComponentName {
+	case "prometheus":
+		return tools.NewPrometheus(client, clusterComponent)
+
+		// TOTO ADD MORE Component
+	}
+
+	return nil, nil
 }

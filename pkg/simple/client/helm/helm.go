@@ -91,6 +91,11 @@ func (c Client) Uninstall(releaseName string) (*release.UninstallReleaseResponse
 	return release, nil
 }
 
+func (c Client) List() ([]*release.Release, error) {
+	// TODO
+	return nil, nil
+}
+
 func (c Client) Status(releaseName string) ([]model.ClusterComponentResStatus, error) {
 	ress := make([]model.ClusterComponentResStatus, 0)
 
