@@ -61,7 +61,7 @@ func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restfu
 
 func NewComponentTool(cluster *clusterv1alpha1.Cluster, clusterComponent *model.ClusterComponent) (tools.Interface, error) {
 	kubeConfig := cluster.Spec.Connection.KubeConfig
-	client, err := helm.NewClient(kubeConfig)
+	client, err := helm.NewClient(kubeConfig, clusterComponent.Namespace)
 	if err != nil {
 		// TODO return error
 	}

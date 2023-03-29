@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"encoding/json"
 	"fmt"
 
 	model "captain/pkg/models/component"
@@ -23,14 +22,13 @@ func installChart(client *helm.Client, clusterComponent *model.ClusterComponent)
 	if err != nil {
 		return nil, err
 	}
-	valueMap := map[string]interface{}{}
-	_ = json.Unmarshal([]byte(clusterComponent.Values), &valueMap)
-	m, err := MergeValueMap(valueMap)
+
+	m, err := MergeValueMap(clusterComponent.Values)
 	if err != nil {
 		return nil, err
 	}
 	// logger.Log.Infof("start install tool %s with chartName: %s, chartVersion: %s", tool.Name, chartName, chartVersion)
-	release, err := client.Install(clusterComponent.ComponentName, clusterComponent.ClusterName, clusterComponent.ComponentVersion, clusterComponent.Namespace, m)
+	release, err := client.Install(clusterComponent.ReleaseName, clusterComponent.ChartName, clusterComponent.ChartVersion, m)
 	if err != nil {
 		return nil, err
 	}

@@ -24,11 +24,15 @@ import (
 
 type Client struct {
 	actionConfig *action.Configuration
+	namespace    string
 	settings     *cli.EnvSettings
 }
 
-func NewClient(kubeConfig []byte) (*Client, error) {
-	actionConfig, err := initActionConfig(kubeConfig)
+func NewClient(kubeConfig []byte, namespace string) (*Client, error) {
+	if namespace == "" {
+		namespace = model.DefaultNamespace
+	}
+	actionConfig, err := initActionConfig(kubeConfig, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("initActionConfig error: %s", err.Error())
 	}
@@ -36,14 +40,14 @@ func NewClient(kubeConfig []byte) (*Client, error) {
 	client := Client{
 		actionConfig: actionConfig,
 		settings:     GetSettings(),
+		namespace:    namespace,
 	}
 
 	return &client, nil
 }
 
-func initActionConfig(kubeconfig []byte) (*action.Configuration, error) {
+func initActionConfig(kubeconfig []byte, namespace string) (*action.Configuration, error) {
 	actionConfig := new(action.Configuration)
-	namespace := "default"
 	cf := genericclioptions.NewConfigFlags(true)
 	kconfig, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 	if err != nil {
@@ -56,13 +60,13 @@ func initActionConfig(kubeconfig []byte) (*action.Configuration, error) {
 	return actionConfig, err
 }
 
-func (c Client) Install(releaseName, chartName, chartVersion, namespace string, values map[string]interface{}) (*release.Release, error) {
+func (c Client) Install(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
 	if err := updateRepo(chartName); err != nil {
 		return nil, err
 	}
 	client := action.NewInstall(c.actionConfig)
 	client.ReleaseName = releaseName
-	client.Namespace = namespace
+	client.Namespace = c.namespace
 	client.ChartPathOptions.InsecureSkipTLSverify = true
 	if len(chartVersion) != 0 {
 		client.ChartPathOptions.Version = chartVersion
