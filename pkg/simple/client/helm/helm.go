@@ -88,6 +88,7 @@ func (c Client) Install(releaseName, chartName, chartVersion string, values map[
 
 func (c Client) Uninstall(releaseName string) (*release.UninstallReleaseResponse, error) {
 	client := action.NewUninstall(c.actionConfig)
+
 	release, err := client.Run(releaseName)
 	if err != nil {
 		return release, fmt.Errorf("uninstall tool %s failed: %v", releaseName, err)
@@ -96,8 +97,12 @@ func (c Client) Uninstall(releaseName string) (*release.UninstallReleaseResponse
 }
 
 func (c Client) List() ([]*release.Release, error) {
-	// TODO
-	return nil, nil
+	client := action.NewList(c.actionConfig)
+	release, err := client.Run()
+	if err != nil {
+		return release, fmt.Errorf("list chart failed: %v", err)
+	}
+	return release, nil
 }
 
 func (c Client) Status(releaseName string) ([]model.ClusterComponentResStatus, error) {
@@ -139,10 +144,32 @@ func (c Client) Status(releaseName string) ([]model.ClusterComponentResStatus, e
 	return ress, nil
 }
 
-// TODO
-func (c Client) upGrade() (*release.Release, error) {
+func (c Client) UpGrade(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
 
-	return nil, nil
+	if err := updateRepo(chartName); err != nil {
+		return nil, err
+	}
+	client := action.NewUpgrade(c.actionConfig)
+	//执行升级
+	client.DryRun = false
+	client.ChartPathOptions.InsecureSkipTLSverify = true
+	client.ChartPathOptions.Version = chartVersion
+	client.Namespace = c.namespace
+	p, err := client.ChartPathOptions.LocateChart(chartName, c.settings)
+	if err != nil {
+		return nil, fmt.Errorf("locate chart %s failed: %v", chartName, err)
+	}
+	//loader执行load方法
+	ct, err := loader.Load(p)
+	if err != nil {
+		return nil, fmt.Errorf("load chart %s failed: %v", chartName, err)
+	}
+
+	release, err := client.Run(releaseName, ct, values)
+	if err != nil {
+		return release, fmt.Errorf("upgrade tool %s with chart %s failed: %v", releaseName, chartName, err)
+	}
+	return release, nil
 }
 
 // 每次安装或升级组件的时候执行

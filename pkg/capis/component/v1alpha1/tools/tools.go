@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	"k8s.io/klog"
 
 	model "captain/pkg/models/component"
 	"captain/pkg/simple/client/helm"
@@ -36,6 +37,20 @@ func installChart(client *helm.Client, releaseName, chartName, chartVersion stri
 	return release, nil
 }
 
+func upgradeChart(client *helm.Client, releaseName, chartName, chartVersion string, values map[string]interface{}) error {
+	m, err := MergeValueMap(values)
+	if err != nil {
+		return err
+	}
+	klog.V(4).Infof("start upgrade tool %s with chartName: %s, chartVersion: %s", releaseName, chartName, chartVersion)
+	_, err = client.UpGrade(releaseName, chartName, chartVersion, m)
+	if err != nil {
+		return err
+	}
+	klog.V(4).Infof("upgrade tool %s successful", releaseName)
+	return nil
+}
+
 func preInstallChart(client *helm.Client, releaseName string) error {
 	rs, err := client.List()
 	if err != nil {
@@ -51,6 +66,29 @@ func preInstallChart(client *helm.Client, releaseName string) error {
 		}
 	}
 	// logger.Log.Infof("uninstall %s before installation successful", tool.Name)
+	return nil
+}
+
+func uninstall(client *helm.Client, releaseName, ingressName, ingressVersion string) error {
+
+	rs, err := client.List()
+	if err != nil {
+		return err
+	}
+	for _, r := range rs {
+		if r.Name == releaseName {
+			_, err := client.Uninstall(releaseName)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	//删除ingress
+	//todo
+	//缺少client和namespace信息
+
+	//logger.Log.Infof("uninstall tool %s of namespace %s successful", tool.Name, namespace)
 	return nil
 }
 
