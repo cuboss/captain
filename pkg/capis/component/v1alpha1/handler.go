@@ -26,7 +26,7 @@ func NewHandler(factory informers.CapInformerFactory, config *config.Config) Han
 
 func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restful.Response) {
 	regionName := req.PathParameter("region")
-	clusterName := req.PathParameter("cl uster")
+	clusterName := req.PathParameter("cluster")
 	clusterComponent := &model.ClusterComponent{}
 	err := req.ReadEntity(clusterComponent)
 	if err != nil {
