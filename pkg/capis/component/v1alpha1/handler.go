@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	clusterv1alpha1 "captain/apis/cluster/v1alpha1"
+	"captain/pkg/api"
 	"captain/pkg/capis/component/v1alpha1/tools"
 	"captain/pkg/informers"
 	model "captain/pkg/models/component"
@@ -29,21 +30,21 @@ func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restf
 	clusterComponent := &model.ClusterComponent{}
 	err := req.ReadEntity(clusterComponent)
 	if err != nil {
-		// TODO return error
+		api.HandleBadRequest(resp, nil, err)
 	}
 	// init client
 	cluster, err := h.Get(regionName, clusterName)
 	if err != nil {
-		// TODO return error
+		api.HandleBadRequest(resp, nil, err)
 	}
 
 	tools, err := NewComponentTool(cluster, clusterComponent)
 	if err != nil {
-		// TODO return error
+		api.HandleBadRequest(resp, nil, err)
 	}
 	release, err := tools.Install()
 	if err != nil {
-		// TODO return error
+		api.HandleBadRequest(resp, nil, err)
 	}
 	resp.WriteEntity(release)
 }
@@ -56,14 +57,36 @@ func (h Handler) handleClusterComponentUninstall(req *restful.Request, resp *res
 	// TODO install
 }
 func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restful.Response) {
-	// TODO fetch status
+	regionName := req.PathParameter("region")
+	clusterName := req.PathParameter("cluster")
+	releaseName := req.PathParameter("release")
+	clusterComponent := &model.ClusterComponent{}
+	err := req.ReadEntity(clusterComponent)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+	}
+	// init client
+	cluster, err := h.Get(regionName, clusterName)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+	}
+	tools, err := NewComponentTool(cluster, clusterComponent)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+	}
+
+	res, err := tools.Status(releaseName)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+	}
+	resp.WriteEntity(model.ClusterComponentResources{Resources: res})
 }
 
 func NewComponentTool(cluster *clusterv1alpha1.Cluster, clusterComponent *model.ClusterComponent) (tools.Interface, error) {
 	kubeConfig := cluster.Spec.Connection.KubeConfig
 	client, err := helm.NewClient(kubeConfig, clusterComponent.Namespace)
 	if err != nil {
-		// TODO return error
+		return nil, err
 	}
 
 	switch clusterComponent.ComponentName {

@@ -30,7 +30,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Produces(restful.MIME_JSON)
 
 	// 安装
-	ws.Route(ws.POST("/clustercomponents").
+	ws.Route(ws.POST("/clustercomponents/install").
 		To(h.handleClusterComponentInstall).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).
@@ -38,7 +38,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Returns(http.StatusOK, respOK, model.ClusterComponent{})).
 		Produces(restful.MIME_JSON)
 	// 升级
-	ws.Route(ws.PUT("/clustercomponents/{releaseName}").
+	ws.Route(ws.POST("/clustercomponents/upgrade").
 		To(h.handleClusterComponentUpgrade).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).
@@ -46,7 +46,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Returns(http.StatusOK, respOK, model.ClusterComponent{})).
 		Produces(restful.MIME_JSON)
 	// 卸载
-	ws.Route(ws.DELETE("/clustercomponents/{releaseName}").
+	ws.Route(ws.POST("/clustercomponents/remove").
 		To(h.handleClusterComponentUninstall).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).
@@ -54,7 +54,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Returns(http.StatusOK, respOK, model.ClusterComponent{})).
 		Produces(restful.MIME_JSON)
 	// 查询
-	ws.Route(ws.GET("/clustercomponents/{releaseName}").
+	ws.Route(ws.POST("/clustercomponents/status").
 		To(h.handleClusterComponentStatus).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).

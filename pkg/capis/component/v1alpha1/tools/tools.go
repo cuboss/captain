@@ -14,21 +14,21 @@ type Interface interface {
 	Install() (*release.Release, error)
 	Upgrade() error
 	Uninstall() error
-	Status()
+	Status(release string) ([]model.ClusterComponentResStatus, error)
 }
 
-func installChart(client *helm.Client, clusterComponent *model.ClusterComponent) (*release.Release, error) {
-	err := preInstallChart(client, clusterComponent.ReleaseName)
+func installChart(client *helm.Client, releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
+	err := preInstallChart(client, releaseName)
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := MergeValueMap(clusterComponent.Values)
+	m, err := MergeValueMap(values)
 	if err != nil {
 		return nil, err
 	}
 	// logger.Log.Infof("start install tool %s with chartName: %s, chartVersion: %s", tool.Name, chartName, chartVersion)
-	release, err := client.Install(clusterComponent.ReleaseName, clusterComponent.ChartName, clusterComponent.ChartVersion, m)
+	release, err := client.Install(releaseName, chartName, chartVersion, m)
 	if err != nil {
 		return nil, err
 	}
@@ -69,4 +69,8 @@ func MergeValueMap(source map[string]interface{}) (map[string]interface{}, error
 		}
 	}
 	return result, nil
+}
+
+func getReleaseStatus(client *helm.Client, releaseName string) ([]model.ClusterComponentResStatus, error) {
+	return client.Status(releaseName)
 }
