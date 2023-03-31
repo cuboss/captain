@@ -36,15 +36,18 @@ func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restf
 	cluster, err := h.Get(regionName, clusterName)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 
 	tools, err := NewComponentTool(cluster, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 	release, err := tools.Install()
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 	resp.WriteEntity(release)
 }
@@ -64,20 +67,24 @@ func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restfu
 	err := req.ReadEntity(clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 	// init client
 	cluster, err := h.Get(regionName, clusterName)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 	tools, err := NewComponentTool(cluster, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 
 	res, err := tools.Status(releaseName)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 	resp.WriteEntity(model.ClusterComponentResources{Resources: res})
 }
