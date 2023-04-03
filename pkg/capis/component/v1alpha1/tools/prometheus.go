@@ -4,6 +4,7 @@ import (
 	model "captain/pkg/models/component"
 	"captain/pkg/simple/client/helm"
 	"fmt"
+
 	"helm.sh/helm/v3/pkg/release"
 )
 
@@ -87,7 +88,7 @@ func (p *Prometheus) Upgrade() error {
 	return err
 }
 
-func (p *Prometheus) Uninstall() error {
+func (p *Prometheus) Uninstall() (*release.UninstallReleaseResponse, error) {
 
 	//需要kube client同样 还缺少namespace信息
 	//创建ingress之后 需要删除ingress

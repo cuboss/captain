@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+
 	"k8s.io/klog"
 
 	model "captain/pkg/models/component"
@@ -14,7 +15,7 @@ import (
 type Interface interface {
 	Install() (*release.Release, error)
 	Upgrade() error
-	Uninstall() error
+	Uninstall() (*release.UninstallReleaseResponse, error)
 	Status(release string) ([]model.ClusterComponentResStatus, error)
 }
 
@@ -69,27 +70,24 @@ func preInstallChart(client *helm.Client, releaseName string) error {
 	return nil
 }
 
-func uninstall(client *helm.Client, releaseName, ingressName, ingressVersion string) error {
-
+func uninstall(client *helm.Client, releaseName, ingressName, ingressVersion string) (*release.UninstallReleaseResponse, error) {
 	rs, err := client.List()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, r := range rs {
 		if r.Name == releaseName {
-			_, err := client.Uninstall(releaseName)
+			rel, err := client.Uninstall(releaseName)
 			if err != nil {
-				return err
+				return nil, err
 			}
+			return rel, nil
 		}
 	}
+	klog.V(4).Infof("uninstall component %s  successful", releaseName)
 
-	//删除ingress
-	//todo
-	//缺少client和namespace信息
-
-	//logger.Log.Infof("uninstall tool %s of namespace %s successful", tool.Name, namespace)
-	return nil
+	// todo 删除ingress
+	return nil, nil
 }
 
 func MergeValueMap(source map[string]interface{}) (map[string]interface{}, error) {

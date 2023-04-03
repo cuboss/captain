@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	clusterv1alpha1 "captain/apis/cluster/v1alpha1"
 	"captain/pkg/api"
 	"captain/pkg/capis/component/v1alpha1/tools"
 	"captain/pkg/informers"
@@ -32,14 +31,8 @@ func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restf
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 	}
-	// init client
-	cluster, err := h.Get(regionName, clusterName)
-	if err != nil {
-		api.HandleBadRequest(resp, nil, err)
-		return
-	}
 
-	tools, err := NewComponentTool(cluster, clusterComponent)
+	tools, err := h.NewComponentTool(regionName, clusterName, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 		return
@@ -56,9 +49,29 @@ func (h Handler) handleClusterComponentUpgrade(req *restful.Request, resp *restf
 	// TODO upgrade
 }
 
+// 卸载组件
 func (h Handler) handleClusterComponentUninstall(req *restful.Request, resp *restful.Response) {
-	// TODO install
+	regionName := req.PathParameter("region")
+	clusterName := req.PathParameter("cluster")
+	clusterComponent := &model.ClusterComponent{}
+	err := req.ReadEntity(clusterComponent)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+	}
+
+	tools, err := h.NewComponentTool(regionName, clusterName, clusterComponent)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+		return
+	}
+	release, err := tools.Uninstall()
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+		return
+	}
+	resp.WriteEntity(release)
 }
+
 func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restful.Response) {
 	regionName := req.PathParameter("region")
 	clusterName := req.PathParameter("cluster")
@@ -69,13 +82,8 @@ func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restfu
 		api.HandleBadRequest(resp, nil, err)
 		return
 	}
-	// init client
-	cluster, err := h.Get(regionName, clusterName)
-	if err != nil {
-		api.HandleBadRequest(resp, nil, err)
-		return
-	}
-	tools, err := NewComponentTool(cluster, clusterComponent)
+
+	tools, err := h.NewComponentTool(regionName, clusterName, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 		return
@@ -89,7 +97,12 @@ func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restfu
 	resp.WriteEntity(model.ClusterComponentResources{Resources: res})
 }
 
-func NewComponentTool(cluster *clusterv1alpha1.Cluster, clusterComponent *model.ClusterComponent) (tools.Interface, error) {
+func (h Handler) NewComponentTool(regionName, clusterName string, clusterComponent *model.ClusterComponent) (tools.Interface, error) {
+	// init client
+	cluster, err := h.Get(regionName, clusterName)
+	if err != nil {
+		return nil, err
+	}
 	kubeConfig := cluster.Spec.Connection.KubeConfig
 	client, err := helm.NewClient(kubeConfig, clusterComponent.Namespace)
 	if err != nil {
