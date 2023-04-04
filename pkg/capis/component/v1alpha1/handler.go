@@ -109,9 +109,15 @@ func (h Handler) NewComponentTool(regionName, clusterName string, clusterCompone
 		return nil, err
 	}
 
+	//new kubeClient
+	kubeClient, err := h.GetClientSet(regionName, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
 	switch clusterComponent.ComponentName {
 	case "prometheus":
-		return tools.NewPrometheus(client, clusterComponent)
+		return tools.NewPrometheus(client, kubeClient, clusterComponent)
 
 		// TOTO ADD MORE Component
 	}

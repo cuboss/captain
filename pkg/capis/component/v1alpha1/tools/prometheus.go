@@ -3,24 +3,37 @@ package tools
 import (
 	model "captain/pkg/models/component"
 	"captain/pkg/simple/client/helm"
+	"context"
 	"fmt"
-
 	"helm.sh/helm/v3/pkg/release"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
+)
+
+const (
+	DefaultPrometheusIngressName = "prometheus-ingress"
+	DefaultPrometheusIngress     = "prometheus." + DefaultIngress
+	DefaultIngress               = "apps.com"
+	DefaultPrometheusServiceName = "prometheus-server"
+
+	DefaultPrometheusDeploymentName = "prometheus-server"
 )
 
 type Prometheus struct {
 	client           *helm.Client
 	clusterComponent *model.ClusterComponent
-
-	release string
-	chart   string
-	version string
-	values  map[string]interface{}
+	kubeClient       *kubernetes.Clientset
+	release          string
+	chart            string
+	version          string
+	values           map[string]interface{}
 }
 
-func NewPrometheus(client *helm.Client, clusterComponent *model.ClusterComponent) (*Prometheus, error) {
+func NewPrometheus(client *helm.Client, kubeClient *kubernetes.Clientset, clusterComponent *model.ClusterComponent) (*Prometheus, error) {
 	p := &Prometheus{
 		client:           client,
+		kubeClient:       kubeClient,
 		clusterComponent: clusterComponent,
 
 		release: clusterComponent.ReleaseName,
@@ -64,21 +77,20 @@ func (p *Prometheus) Install() (*release.Release, error) {
 		return nil, err
 	}
 
-	// TODO create ingress
-	/*ingressItem := &Ingress{
-		name:    constant.DefaultPrometheusIngressName,
-		url:     constant.DefaultPrometheusIngress,
-		service: constant.DefaultPrometheusServiceName,
-		port:    80,
-		version: p.Cluster.Version,
+	ingressItem := &Ingress{
+		name:    DefaultPrometheusIngressName,
+		url:     DefaultPrometheusIngress,
+		service: DefaultPrometheusServiceName,
+		//version 暂时未添加
+		port: 80,
 	}
-	if err := createRoute(p.Cluster.Namespace, ingressItem, p.Cluster.KubeClient); err != nil {
-		return err
-	}*/
-	/*
-		if err := waitForRunning(p.Cluster.Namespace, constant.DefaultPrometheusDeploymentName, 1, p.Cluster.KubeClient); err != nil {
-			return err
-		}*/
+	if err := createRoute(p.clusterComponent.Namespace, ingressItem, p.kubeClient); err != nil {
+		return nil, err
+	}
+
+	if err := waitForRunning(p.clusterComponent.Namespace, DefaultPrometheusDeploymentName, 1, p.kubeClient); err != nil {
+		return nil, err
+	}
 	return release, err
 }
 
@@ -92,7 +104,7 @@ func (p *Prometheus) Uninstall() (*release.UninstallReleaseResponse, error) {
 
 	//需要kube client同样 还缺少namespace信息
 	//创建ingress之后 需要删除ingress
-	return uninstall(p.client, p.release, "", "")
+	return uninstall(p.client, p.kubeClient, p.release, DefaultPrometheusIngressName, p.clusterComponent.Namespace)
 }
 
 func (p *Prometheus) Status(release string) ([]model.ClusterComponentResStatus, error) {
@@ -105,7 +117,14 @@ func (p Prometheus) valuse1501Binding(isInstall bool) map[string]interface{} {
 		values = p.clusterComponent.Parameters
 	}
 	if !isInstall {
-		//TODO
+		get, _ := p.kubeClient.AppsV1().Deployments(p.clusterComponent.Namespace).Get(context.TODO(), "prometheus-kube-state-metrics", v1.GetOptions{})
+		//NotFound error不影响
+		if get.Name != "" {
+			if err := p.kubeClient.AppsV1().Deployments(p.clusterComponent.Namespace).Delete(context.TODO(), "prometheus-kube-state-metrics", v1.DeleteOptions{}); err != nil {
+				klog.Infof("delete deployment prometheus-kube-state-metrics from %s failed, err: %v", p.clusterComponent.Namespace, err)
+			}
+		}
+
 		//升级时  需要删除promtheus-kube-state-metrics  否则会触发一系列告警
 		//kube client delete ns prometheus-kube-state-metrics
 		//klog.V(4).Infof("delete deployment prometheus-kube-state-metrics from %s failed, err: %v", namespace, err)
