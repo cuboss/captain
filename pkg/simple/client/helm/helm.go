@@ -144,7 +144,7 @@ func (c Client) Status(releaseName string) ([]model.ClusterComponentResStatus, e
 	return ress, nil
 }
 
-func (c Client) UpGrade(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
+func (c Client) Upgrade(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
 
 	if err := updateRepo(chartName); err != nil {
 		return nil, err

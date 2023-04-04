@@ -82,10 +82,10 @@ func (p *Prometheus) Install() (*release.Release, error) {
 	return release, err
 }
 
-func (p *Prometheus) Upgrade() error {
+func (p *Prometheus) Upgrade() (*release.Release, error) {
 	p.setDefaultValue(p.clusterComponent, false)
-	err := upgradeChart(p.client, p.release, p.chart, p.version, p.values)
-	return err
+	rel, err := upgradeChart(p.client, p.release, p.chart, p.version, p.values)
+	return rel, err
 }
 
 func (p *Prometheus) Uninstall() (*release.UninstallReleaseResponse, error) {

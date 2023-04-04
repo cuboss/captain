@@ -46,6 +46,25 @@ func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restf
 }
 
 func (h Handler) handleClusterComponentUpgrade(req *restful.Request, resp *restful.Response) {
+	regionName := req.PathParameter("region")
+	clusterName := req.PathParameter("cluster")
+	clusterComponent := &model.ClusterComponent{}
+	err := req.ReadEntity(clusterComponent)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+	}
+
+	tools, err := h.NewComponentTool(regionName, clusterName, clusterComponent)
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+		return
+	}
+	release, err := tools.Upgrade()
+	if err != nil {
+		api.HandleBadRequest(resp, nil, err)
+		return
+	}
+	resp.WriteEntity(release)
 	// TODO upgrade
 }
 
@@ -75,7 +94,6 @@ func (h Handler) handleClusterComponentUninstall(req *restful.Request, resp *res
 func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restful.Response) {
 	regionName := req.PathParameter("region")
 	clusterName := req.PathParameter("cluster")
-	releaseName := req.PathParameter("release")
 	clusterComponent := &model.ClusterComponent{}
 	err := req.ReadEntity(clusterComponent)
 	if err != nil {
@@ -89,7 +107,7 @@ func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restfu
 		return
 	}
 
-	res, err := tools.Status(releaseName)
+	res, err := tools.Status(clusterComponent.ReleaseName)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 		return

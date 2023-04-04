@@ -14,7 +14,7 @@ import (
 
 type Interface interface {
 	Install() (*release.Release, error)
-	Upgrade() error
+	Upgrade() (*release.Release, error)
 	Uninstall() (*release.UninstallReleaseResponse, error)
 	Status(release string) ([]model.ClusterComponentResStatus, error)
 }
@@ -38,18 +38,18 @@ func installChart(client *helm.Client, releaseName, chartName, chartVersion stri
 	return release, nil
 }
 
-func upgradeChart(client *helm.Client, releaseName, chartName, chartVersion string, values map[string]interface{}) error {
+func upgradeChart(client *helm.Client, releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
 	m, err := MergeValueMap(values)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	klog.V(4).Infof("start upgrade tool %s with chartName: %s, chartVersion: %s", releaseName, chartName, chartVersion)
-	_, err = client.UpGrade(releaseName, chartName, chartVersion, m)
+	rel, err := client.Upgrade(releaseName, chartName, chartVersion, m)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	klog.V(4).Infof("upgrade tool %s successful", releaseName)
-	return nil
+	return rel, nil
 }
 
 func preInstallChart(client *helm.Client, releaseName string) error {
