@@ -14,12 +14,14 @@ import (
 
 type Handler struct {
 	clusterclient.ClusterClients
+	Options *helm.Options
 }
 
 func NewHandler(factory informers.CapInformerFactory, config *config.Config) Handler {
 	clients := clusterclient.NewClusterClients(factory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters(), config.MultiClusterOptions)
 	return Handler{
 		ClusterClients: clients,
+		Options:        config.ComponentOptions,
 	}
 }
 
@@ -122,7 +124,7 @@ func (h Handler) NewComponentTool(regionName, clusterName string, clusterCompone
 		return nil, err
 	}
 	kubeConfig := cluster.Spec.Connection.KubeConfig
-	client, err := helm.NewClient(kubeConfig, clusterComponent.Namespace)
+	client, err := helm.NewClient(kubeConfig, clusterComponent.Namespace, h.Options)
 	if err != nil {
 		return nil, err
 	}

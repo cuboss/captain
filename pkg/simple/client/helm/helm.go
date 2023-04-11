@@ -37,9 +37,10 @@ type Client struct {
 	actionConfig *action.Configuration
 	namespace    string
 	settings     *cli.EnvSettings
+	options      *Options
 }
 
-func NewClient(kubeConfig []byte, namespace string) (*Client, error) {
+func NewClient(kubeConfig []byte, namespace string, options *Options) (*Client, error) {
 	if namespace == "" {
 		namespace = model.DefaultNamespace
 	}
@@ -52,6 +53,7 @@ func NewClient(kubeConfig []byte, namespace string) (*Client, error) {
 		actionConfig: actionConfig,
 		settings:     GetSettings(),
 		namespace:    namespace,
+		options:      options,
 	}
 
 	return &client, nil
@@ -72,7 +74,7 @@ func initActionConfig(kubeconfig []byte, namespace string) (*action.Configuratio
 }
 
 func (c Client) Install(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
-	if err := updateRepo(chartName, ""); err != nil {
+	if err := c.updateRepo(chartName, ""); err != nil {
 		return nil, err
 	}
 	client := action.NewInstall(c.actionConfig)
@@ -156,7 +158,7 @@ func (c Client) Status(releaseName string) ([]model.ClusterComponentResStatus, e
 }
 
 func (c Client) Upgrade(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
-	if err := updateRepo(chartName, ""); err != nil {
+	if err := c.updateRepo(chartName, ""); err != nil {
 		return nil, err
 	}
 	client := action.NewUpgrade(c.actionConfig)
@@ -182,7 +184,7 @@ func (c Client) Upgrade(releaseName, chartName, chartVersion string, values map[
 	return release, nil
 }
 
-func addRepo(arch string) error {
+func (c Client) addRepo(arch string) error {
 	settings := GetSettings()
 	repoFile := settings.RepositoryConfig
 	if err := os.MkdirAll(filepath.Dir(repoFile), os.ModePerm); err != nil && !os.IsExist(err) {
@@ -215,7 +217,7 @@ func addRepo(arch string) error {
 	}
 
 	// get repo
-	e := getComponentRepo("", "")
+	e := c.getComponentRepo("", "")
 	r, err := repo.NewChartRepository(e, getter.All(settings))
 	if err != nil {
 		return err
@@ -273,7 +275,7 @@ func updateCharts() error {
 
 // 每次安装或升级组件的时候执行
 // 每次启用或升级的时候执行，存在 nexus 则不采取操作
-func updateRepo(component, arch string) error {
+func (c Client) updateRepo(component, arch string) error {
 	repos, err := ListRepo()
 	if err != nil {
 		klog.V(4).Infof("list repo failed: %v, start reading from db repo", err)
@@ -286,7 +288,7 @@ func updateRepo(component, arch string) error {
 		}
 	}
 	if !flag {
-		if err := addRepo(arch); err != nil {
+		if err := c.addRepo(arch); err != nil {
 			return err
 		}
 		if err := updateCharts(); err != nil {
@@ -296,13 +298,14 @@ func updateRepo(component, arch string) error {
 	return nil
 }
 
-func getComponentRepo(component, arch string) *repo.Entry {
+func (c Client) getComponentRepo(component, arch string) *repo.Entry {
 	// TODO switch component case: return repoUrl and Name
-	// 创建一个Helm仓库对象
 	return &repo.Entry{
-		Name: "bitnami",
-		// 设置Helm仓库的地址
-		URL: "https://charts.bitnami.com/bitnami",
+		Name:                  c.options.Name,
+		URL:                   c.options.URL,
+		Username:              c.options.Username,
+		Password:              c.options.Password,
+		InsecureSkipTLSverify: true,
 	}
 }
 
