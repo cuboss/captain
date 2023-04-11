@@ -25,12 +25,12 @@ func installChart(client *helm.Client, releaseName, chartName, chartVersion stri
 		return nil, err
 	}
 
-	m, err := MergeValueMap(values)
-	if err != nil {
-		return nil, err
-	}
+	//m, err := MergeValueMap(values)
+	//if err != nil {
+	//	return nil, err
+	//}
 	// logger.Log.Infof("start install tool %s with chartName: %s, chartVersion: %s", tool.Name, chartName, chartVersion)
-	release, err := client.Install(releaseName, chartName, chartVersion, m)
+	release, err := client.Install(releaseName, chartName, chartVersion, values)
 	if err != nil {
 		return nil, err
 	}
@@ -39,12 +39,12 @@ func installChart(client *helm.Client, releaseName, chartName, chartVersion stri
 }
 
 func upgradeChart(client *helm.Client, releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
-	m, err := MergeValueMap(values)
-	if err != nil {
-		return nil, err
-	}
+	//m, err := MergeValueMap(values)
+	//if err != nil {
+	//	return nil, err
+	//}
 	klog.V(4).Infof("start upgrade tool %s with chartName: %s, chartVersion: %s", releaseName, chartName, chartVersion)
-	rel, err := client.Upgrade(releaseName, chartName, chartVersion, m)
+	rel, err := client.Upgrade(releaseName, chartName, chartVersion, values)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +105,34 @@ func MergeValueMap(source map[string]interface{}) (map[string]interface{}, error
 		}
 	}
 	return result, nil
+}
+
+func mergeMaps(map1 map[string]interface{}, map2 map[string]interface{}) map[string]interface{} {
+	mergedMap := make(map[string]interface{})
+
+	for k, v1 := range map1 {
+		if v2, ok := map2[k]; ok {
+			if subMap1, ok := v1.(map[string]interface{}); ok {
+				if subMap2, ok := v2.(map[string]interface{}); ok {
+					mergedMap[k] = mergeMaps(subMap1, subMap2)
+				} else {
+					mergedMap[k] = v1
+				}
+			} else {
+				mergedMap[k] = v2
+			}
+		} else {
+			mergedMap[k] = v1
+		}
+	}
+
+	for k, v2 := range map2 {
+		if _, ok := map1[k]; !ok {
+			mergedMap[k] = v2
+		}
+	}
+
+	return mergedMap
 }
 
 func getReleaseStatus(client *helm.Client, releaseName string) ([]model.ClusterComponentResStatus, error) {

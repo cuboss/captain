@@ -1,6 +1,8 @@
 package component
 
-import "time"
+import (
+	"time"
+)
 
 type ComponentBase struct {
 	Type             string `json:"type"` // system or optional
@@ -23,6 +25,7 @@ type ClusterComponent struct {
 	Parameters   map[string]interface{} `json:"parameters"`
 	Namespace    string                 `json:"namespace"`
 	Status       string                 `json:"status"`
+	DefultValues map[string]interface{} `json:"default_values"`
 	ClusterComponentResources
 }
 

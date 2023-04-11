@@ -4,10 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
 
 	model "captain/pkg/models/component"
 
+	"github.com/gofrs/flock"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
@@ -20,7 +28,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 )
+
+func nolog(format string, v ...interface{}) {}
 
 type Client struct {
 	actionConfig *action.Configuration
@@ -56,12 +67,12 @@ func initActionConfig(kubeconfig []byte, namespace string) (*action.Configuratio
 	cf.WrapConfigFn = func(config *rest.Config) *rest.Config {
 		return kconfig
 	}
-	err = actionConfig.Init(cf, namespace, "configmap", log.Printf)
+	err = actionConfig.Init(cf, namespace, "configmap", nolog)
 	return actionConfig, err
 }
 
 func (c Client) Install(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
-	if err := updateRepo(chartName); err != nil {
+	if err := updateRepo(chartName, ""); err != nil {
 		return nil, err
 	}
 	client := action.NewInstall(c.actionConfig)
@@ -145,8 +156,7 @@ func (c Client) Status(releaseName string) ([]model.ClusterComponentResStatus, e
 }
 
 func (c Client) Upgrade(releaseName, chartName, chartVersion string, values map[string]interface{}) (*release.Release, error) {
-
-	if err := updateRepo(chartName); err != nil {
+	if err := updateRepo(chartName, ""); err != nil {
 		return nil, err
 	}
 	client := action.NewUpgrade(c.actionConfig)
@@ -172,26 +182,127 @@ func (c Client) Upgrade(releaseName, chartName, chartVersion string, values map[
 	return release, nil
 }
 
-// 每次安装或升级组件的时候执行
-func updateRepo(component string) error {
-	helmRepo, err := repo.NewChartRepository(getComponentRepo(component), getter.All(GetSettings()))
-	if err != nil {
-		return fmt.Errorf("Failed to create Helm repository: %v\n", err)
+func addRepo(arch string) error {
+	settings := GetSettings()
+	repoFile := settings.RepositoryConfig
+	if err := os.MkdirAll(filepath.Dir(repoFile), os.ModePerm); err != nil && !os.IsExist(err) {
+		return err
 	}
-	// 更新Helm仓库索引
-	if _, err := helmRepo.DownloadIndexFile(); err != nil {
-		return fmt.Errorf("Failed to update Helm repository index: %v\n", err)
+
+	fileLock := flock.New(strings.Replace(repoFile, filepath.Ext(repoFile), ".lock", 1))
+	lockCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	locked, err := fileLock.TryLockContext(lockCtx, time.Second)
+	if err == nil && locked {
+		defer func() {
+			if err := fileLock.Unlock(); err != nil {
+				klog.Errorf("addRepo fileLock.Unlock failed, error: %s", err.Error())
+			}
+		}()
+	}
+	if err != nil {
+		return err
+	}
+
+	b, err := ioutil.ReadFile(repoFile)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	var f repo.File
+	if err := yaml.Unmarshal(b, &f); err != nil {
+		return err
+	}
+
+	// get repo
+	e := getComponentRepo("", "")
+	r, err := repo.NewChartRepository(e, getter.All(settings))
+	if err != nil {
+		return err
+	}
+	r.CachePath = settings.RepositoryCache
+	if _, err := r.DownloadIndexFile(); err != nil {
+		return errors.Wrapf(err, "looks like %q is not a valid chart repository or cannot be reached", e.URL)
+	}
+
+	f.Update(e)
+
+	if err := f.WriteFile(repoFile, 0644); err != nil {
+		return err
 	}
 	return nil
 }
 
-func getComponentRepo(component string) *repo.Entry {
+func updateCharts() error {
+	klog.V(4).Infoln("Hang tight while we grab the latest from your chart repositories...")
+	settings := GetSettings()
+	repoFile := settings.RepositoryConfig
+	repoCache := settings.RepositoryCache
+	f, err := repo.LoadFile(repoFile)
+	if err != nil {
+		return fmt.Errorf("load file of repo %s failed: %v", repoFile, err)
+	}
+	var rps []*repo.ChartRepository
+	for _, cfg := range f.Repositories {
+		r, err := repo.NewChartRepository(cfg, getter.All(settings))
+		if err != nil {
+			return fmt.Errorf("get new chart repository failed, err: %v", err.Error())
+		}
+		if repoCache != "" {
+			r.CachePath = repoCache
+		}
+		rps = append(rps, r)
+	}
+
+	var wg sync.WaitGroup
+	for _, re := range rps {
+		wg.Add(1)
+		go func(re *repo.ChartRepository) {
+			defer wg.Done()
+			if _, err := re.DownloadIndexFile(); err != nil {
+				klog.V(4).Infof("...Unable to get an update from the %q chart repository (%s):\n\t%s\n", re.Config.Name, re.Config.URL, err)
+			} else {
+				klog.V(4).Infof("...Successfully got an update from the %q chart repository\n", re.Config.Name)
+			}
+		}(re)
+	}
+	wg.Wait()
+	klog.V(4).Infof("Update Complete. ⎈ Happy Helming!⎈ ")
+	return nil
+}
+
+// 每次安装或升级组件的时候执行
+// 每次启用或升级的时候执行，存在 nexus 则不采取操作
+func updateRepo(component, arch string) error {
+	repos, err := ListRepo()
+	if err != nil {
+		klog.V(4).Infof("list repo failed: %v, start reading from db repo", err)
+	}
+	flag := false
+	for _, r := range repos {
+		if r.Name == "nexus" {
+			klog.V(4).Infof("my nexus addr is %s", r.URL)
+			flag = true
+		}
+	}
+	if !flag {
+		if err := addRepo(arch); err != nil {
+			return err
+		}
+		if err := updateCharts(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getComponentRepo(component, arch string) *repo.Entry {
 	// TODO switch component case: return repoUrl and Name
 	// 创建一个Helm仓库对象
 	return &repo.Entry{
-		Name: "mirantis",
+		Name: "bitnami",
 		// 设置Helm仓库的地址
-		URL: "https://charts.mirantis.com/",
+		URL: "https://charts.bitnami.com/bitnami",
 	}
 }
 
@@ -202,4 +313,14 @@ func GetSettings() *cli.EnvSettings {
 		RepositoryConfig: helmpath.ConfigPath("repositories.yaml"),
 		RepositoryCache:  helmpath.CachePath("repository"),
 	}
+}
+
+func ListRepo() ([]*repo.Entry, error) {
+	settings := GetSettings()
+	var repos []*repo.Entry
+	f, err := repo.LoadFile(settings.RepositoryConfig)
+	if err != nil {
+		return repos, err
+	}
+	return f.Repositories, nil
 }

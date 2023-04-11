@@ -132,7 +132,7 @@ func (h Handler) NewComponentTool(regionName, clusterName string, clusterCompone
 		return tools.NewPrometheus(client, clusterComponent)
 
 		// TOTO ADD MORE Component
+	default:
+		return tools.NewDefaultTool(client, clusterComponent)
 	}
-
-	return nil, nil
 }

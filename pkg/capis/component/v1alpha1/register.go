@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"net/http"
 
+	"captain/pkg/capis"
 	"captain/pkg/constants"
 	"captain/pkg/informers"
 	model "captain/pkg/models/component"
@@ -20,17 +21,13 @@ const (
 
 var GroupVersion = schema.GroupVersion{Group: groupName, Version: "v1alpha1"}
 
-func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, config *config.Config) {
+func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, config *config.Config) error {
 	h := NewHandler(factory, config)
 
-	ws := &restful.WebService{}
-	ws.Path("/regions/{region}/clusters/{cluster}/capis/" + GroupVersion.String()).
-		Param(ws.PathParameter("region", "region id of cluster")).
-		Param(ws.PathParameter("cluster", "name of cluster")).
-		Produces(restful.MIME_JSON)
+	ws := capis.RegionScopeService
 
 	// 安装
-	ws.Route(ws.POST("/clustercomponents/install").
+	ws.Route(ws.POST(GroupVersion.String()+"/clustercomponents/install").
 		To(h.handleClusterComponentInstall).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).
@@ -38,7 +35,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Returns(http.StatusOK, respOK, model.ClusterComponent{})).
 		Produces(restful.MIME_JSON)
 	// 升级
-	ws.Route(ws.POST("/clustercomponents/upgrade").
+	ws.Route(ws.POST(GroupVersion.String()+"/clustercomponents/upgrade").
 		To(h.handleClusterComponentUpgrade).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).
@@ -46,7 +43,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Returns(http.StatusOK, respOK, model.ClusterComponent{})).
 		Produces(restful.MIME_JSON)
 	// 卸载
-	ws.Route(ws.POST("/clustercomponents/remove").
+	ws.Route(ws.POST(GroupVersion.String()+"/clustercomponents/remove").
 		To(h.handleClusterComponentUninstall).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).
@@ -54,11 +51,16 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Returns(http.StatusOK, respOK, model.ClusterComponent{})).
 		Produces(restful.MIME_JSON)
 	// 查询
-	ws.Route(ws.POST("/clustercomponents/status").
+	ws.Route(ws.POST(GroupVersion.String()+"/clustercomponents/status").
 		To(h.handleClusterComponentStatus).
 		Doc("Install component in cluster.").
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.ClusterMetricsTag}).
 		Writes(model.ClusterComponent{}).
 		Returns(http.StatusOK, respOK, model.ClusterComponent{})).
 		Produces(restful.MIME_JSON)
+
+	// add in apiserver.go
+	//c.Add(ws)
+
+	return nil
 }

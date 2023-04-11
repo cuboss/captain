@@ -3,6 +3,7 @@ package alpha1
 import (
 	"captain/pkg/api"
 	"captain/pkg/bussiness/kube-resources/alpha1/resource"
+	"captain/pkg/capis"
 	"captain/pkg/informers"
 	"captain/pkg/server/config"
 	"captain/pkg/server/runtime"
@@ -75,13 +76,10 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 	c.Add(webservice)
 
 	// +region + cluster
-	webservice2 := &restful.WebService{}
-	webservice2.Path("/regions/{region}/clusters/{cluster}/capis/" + GroupVersion.String()).
-		Param(webservice2.PathParameter("region", "region id of cluster")).
-		Param(webservice2.PathParameter("cluster", "name of cluster")).
-		Produces(restful.MIME_JSON)
 
-	webservice2.Route(webservice2.GET("/namespaces/{namespace}/resources/{resources}").
+	webservice2 := capis.RegionScopeService
+
+	webservice2.Route(webservice2.GET(GroupVersion.String()+"/namespaces/{namespace}/resources/{resources}").
 		To(handler.handleListResources).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").
@@ -93,7 +91,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice2.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
 		Param(webservice2.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-	webservice2.Route(webservice2.GET("/resources/{resources}").
+	webservice2.Route(webservice2.GET(GroupVersion.String()+"/resources/{resources}").
 		To(handler.handleListResources).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("core level resources").
@@ -104,7 +102,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice2.QueryParameter(query.ParameterAscending, "sort parameters, e.g. reverse=true").Required(false).DefaultValue("ascending=false")).
 		Param(webservice2.QueryParameter(query.ParameterOrderBy, "sort parameters, e.g. orderBy=createTime")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-	webservice2.Route(webservice2.GET("/namespaces/{namespace}/resources/{resources}/name/{name}").
+	webservice2.Route(webservice2.GET(GroupVersion.String()+"/namespaces/{namespace}/resources/{resources}/name/{name}").
 		To(handler.handleGetResource).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").
@@ -112,7 +110,7 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice2.PathParameter("namespace", "namespace of resources")).
 		Param(webservice2.PathParameter("name", "name of resources")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
-	webservice2.Route(webservice2.GET("/resources/{resources}/name/{name}").
+	webservice2.Route(webservice2.GET(GroupVersion.String()+"/resources/{resources}/name/{name}").
 		To(handler.handleGetResource).
 		Metadata(restfulspec.KeyOpenAPITags, []string{tagClusteredResource}).
 		Doc("Cluster level resources").
@@ -120,7 +118,8 @@ func AddToContainer(c *restful.Container, factory informers.CapInformerFactory, 
 		Param(webservice2.PathParameter("name", "name of resources")).
 		Returns(http.StatusOK, ok, api.ListResult{}))
 
-	c.Add(webservice2)
+	// add in apiserver.go
+	// c.Add(webservice2)
 
 	return nil
 }
