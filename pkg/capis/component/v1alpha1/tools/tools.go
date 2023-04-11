@@ -192,8 +192,10 @@ func uninstall(client *helm.Client, kubeClient *kubernetes.Clientset, releaseNam
 
 	//get, _ := kubeClient.NetworkingV1().Ingresses(namespace).Get(context.TODO(), ingressName, metav1.GetOptions{})
 	//NotFound error不影响
-	if err := kubeClient.NetworkingV1().Ingresses(namespace).Delete(context.TODO(), ingressName, metav1.DeleteOptions{}); err != nil {
-		klog.Errorf("uninstall tool %s of namespace %s failed, err: %v", releaseName, namespace, err)
+	if ingressName != "" {
+		if err := kubeClient.NetworkingV1().Ingresses(namespace).Delete(context.TODO(), ingressName, metav1.DeleteOptions{}); err != nil {
+			klog.Errorf("uninstall tool %s of namespace %s failed, err: %v", releaseName, namespace, err)
+		}
 	}
 
 	return nil, nil

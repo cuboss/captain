@@ -54,7 +54,7 @@ func (p *DefaultTool) Uninstall() (*release.UninstallReleaseResponse, error) {
 
 	//需要kube client同样 还缺少namespace信息
 	//创建ingress之后 需要删除ingress
-	return uninstall(p.client, p.release, "", "")
+	return uninstall(p.client, nil, p.release, "", "")
 }
 
 func (p *DefaultTool) Status(release string) ([]model.ClusterComponentResStatus, error) {
