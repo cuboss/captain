@@ -32,6 +32,7 @@ func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restf
 	err := req.ReadEntity(clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
+		return
 	}
 
 	tools, err := h.NewComponentTool(regionName, clusterName, clusterComponent)

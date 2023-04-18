@@ -274,9 +274,9 @@ func updateCharts() error {
 }
 
 // 每次安装或升级组件的时候执行
-// 每次启用或升级的时候执行，存在 nexus 则不采取操作
+// 每次启用或升级的时候执行，存在 nexus 则不采取操作？
 func (c Client) updateRepo(component, arch string) error {
-	repos, err := ListRepo()
+	/*repos, err := ListRepo()
 	if err != nil {
 		klog.V(4).Infof("list repo failed: %v, start reading from db repo", err)
 	}
@@ -288,13 +288,14 @@ func (c Client) updateRepo(component, arch string) error {
 		}
 	}
 	if !flag {
-		if err := c.addRepo(arch); err != nil {
-			return err
-		}
-		if err := updateCharts(); err != nil {
-			return err
-		}
+	*/
+	if err := c.addRepo(arch); err != nil {
+		return err
 	}
+	if err := updateCharts(); err != nil {
+		return err
+	}
+	// }
 	return nil
 }
 
