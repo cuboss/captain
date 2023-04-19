@@ -5,6 +5,7 @@ import (
 	"captain/pkg/simple/client/helm"
 	"context"
 	"fmt"
+
 	"helm.sh/helm/v3/pkg/release"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -43,7 +44,7 @@ func NewPrometheus(client *helm.Client, kubeClient *kubernetes.Clientset, cluste
 	return p, nil
 }
 
-func (p Prometheus) setDefaultValue(clusterComponent *model.ClusterComponent, isInstall bool) {
+func (p *Prometheus) setDefaultValue(clusterComponent *model.ClusterComponent, isInstall bool) {
 
 	values := map[string]interface{}{}
 	//根据不同版本prometheus填充

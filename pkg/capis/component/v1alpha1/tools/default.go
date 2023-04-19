@@ -17,7 +17,7 @@ type DefaultTool struct {
 	values  map[string]interface{}
 }
 
-func (p DefaultTool) setDefaultValue() {
+func (p *DefaultTool) setDefaultValue() {
 	p.values = mergeMaps(p.clusterComponent.DefultValues, p.clusterComponent.Parameters)
 }
 
