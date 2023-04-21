@@ -1,6 +1,9 @@
 package v1alpha1
 
 import (
+	"encoding/json"
+	"io/ioutil"
+
 	"captain/pkg/api"
 	"captain/pkg/capis/component/v1alpha1/tools"
 	"captain/pkg/informers"
@@ -29,7 +32,8 @@ func (h Handler) handleClusterComponentInstall(req *restful.Request, resp *restf
 	regionName := req.PathParameter("region")
 	clusterName := req.PathParameter("cluster")
 	clusterComponent := &model.ClusterComponent{}
-	err := req.ReadEntity(clusterComponent)
+	b, _ := ioutil.ReadAll(req.Request.Body)
+	err := json.Unmarshal(b, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 		return
@@ -52,7 +56,8 @@ func (h Handler) handleClusterComponentUpgrade(req *restful.Request, resp *restf
 	regionName := req.PathParameter("region")
 	clusterName := req.PathParameter("cluster")
 	clusterComponent := &model.ClusterComponent{}
-	err := req.ReadEntity(clusterComponent)
+	b, _ := ioutil.ReadAll(req.Request.Body)
+	err := json.Unmarshal(b, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 	}
@@ -76,7 +81,8 @@ func (h Handler) handleClusterComponentUninstall(req *restful.Request, resp *res
 	regionName := req.PathParameter("region")
 	clusterName := req.PathParameter("cluster")
 	clusterComponent := &model.ClusterComponent{}
-	err := req.ReadEntity(clusterComponent)
+	b, _ := ioutil.ReadAll(req.Request.Body)
+	err := json.Unmarshal(b, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 	}
@@ -98,7 +104,8 @@ func (h Handler) handleClusterComponentStatus(req *restful.Request, resp *restfu
 	regionName := req.PathParameter("region")
 	clusterName := req.PathParameter("cluster")
 	clusterComponent := &model.ClusterComponent{}
-	err := req.ReadEntity(clusterComponent)
+	b, _ := ioutil.ReadAll(req.Request.Body)
+	err := json.Unmarshal(b, clusterComponent)
 	if err != nil {
 		api.HandleBadRequest(resp, nil, err)
 		return

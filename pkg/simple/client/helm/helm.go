@@ -101,7 +101,8 @@ func (c Client) Install(releaseName, chartName, chartVersion string, values map[
 
 func (c Client) Uninstall(releaseName string) (*release.UninstallReleaseResponse, error) {
 	client := action.NewUninstall(c.actionConfig)
-
+	client.Wait = true
+	client.Timeout = 3 * time.Minute
 	release, err := client.Run(releaseName)
 	if err != nil {
 		return release, fmt.Errorf("uninstall tool %s failed: %v", releaseName, err)
@@ -127,7 +128,7 @@ func (c Client) Status(releaseName string) ([]model.ClusterComponentResStatus, e
 	if err != nil {
 		return nil, err
 	}
-	resources, err := c.actionConfig.KubeClient.Build(bytes.NewBufferString(rel.Manifest), true)
+	resources, err := c.actionConfig.KubeClient.Build(bytes.NewBufferString(rel.Manifest), false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes objects from release manifest, err: %v", err)
 	}
