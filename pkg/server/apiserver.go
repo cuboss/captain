@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"captain/pkg/capis"
+	componentv1alpha1 "captain/pkg/capis/component/v1alpha1"
 	monitoringv1alpha1 "captain/pkg/capis/monitoring/v1alpha1"
 	"captain/pkg/capis/openapi"
 	"captain/pkg/capis/version"
@@ -98,9 +100,13 @@ func (s *CaptainAPIServer) installCaptainAPIs() {
 	// captain apis for captain cluster resources
 	urlruntime.Must(resV1alpha1.AddToContainer(s.container, s.InformerFactory, s.KubernetesClient, s.KubeRuntimeCache, s.Config))
 
+	// cluster component api
+	urlruntime.Must(componentv1alpha1.AddToContainer(s.container, s.InformerFactory, s.Config))
+
 	// open api
 	urlruntime.Must(openapi.AddToContainer(s.container))
 
+	s.container.Add(capis.RegionScopeService)
 }
 
 // 通过WithRequestInfo解析API请求的信息，WithKubeAPIServer根据API请求信息判断是否代理请求给Kubernetes
