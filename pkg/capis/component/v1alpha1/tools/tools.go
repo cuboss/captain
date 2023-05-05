@@ -183,12 +183,13 @@ func uninstall(client *helm.Client, kubeClient *kubernetes.Clientset, releaseNam
 		if r.Name == releaseName {
 			rel, err := client.Uninstall(releaseName)
 			if err != nil {
+				klog.Errorf("uninstall component %s failed, err: %v", releaseName, err)
 				return nil, err
 			}
+			klog.V(4).Infof("uninstall component %s successful", releaseName)
 			return rel, nil
 		}
 	}
-	klog.V(4).Infof("uninstall component %s  successful", releaseName)
 
 	//get, _ := kubeClient.NetworkingV1().Ingresses(namespace).Get(context.TODO(), ingressName, metav1.GetOptions{})
 	//NotFound error不影响
