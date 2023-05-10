@@ -1,6 +1,7 @@
 package config
 
 import (
+	"captain/pkg/capis/component/v1alpha1/tools"
 	"fmt"
 	"reflect"
 	"strings"
@@ -108,21 +109,23 @@ func defaultConfig() *config {
 
 // Config defines everything needed for captain-server to deal with external services
 type Config struct {
-	KubernetesOptions   *k8s.KubernetesOptions `json:"kubernetes,omitempty" yaml:"kubernetes,omitempty" mapstructure:"kubernetes"`
-	RedisOptions        *cache.Options         `json:"redis,omitempty" yaml:"redis,omitempty" mapstructure:"redis"`
-	MultiClusterOptions *multicluster.Options  `json:"multicluster,omitempty" yaml:"multicluster,omitempty" mapstructure:"multicluster"`
-	MonitoringOptions   *prometheus.Options    `json:"monitoring,omitempty" yaml:"monitoring,omitempty" mapstructure:"monitoring"`
-	ComponentOptions    *helm.Options          `json:"component,omitempty" yaml:"component,omitempty" mapstructure:"component"`
+	KubernetesOptions    *k8s.KubernetesOptions      `json:"kubernetes,omitempty" yaml:"kubernetes,omitempty" mapstructure:"kubernetes"`
+	RedisOptions         *cache.Options              `json:"redis,omitempty" yaml:"redis,omitempty" mapstructure:"redis"`
+	MultiClusterOptions  *multicluster.Options       `json:"multicluster,omitempty" yaml:"multicluster,omitempty" mapstructure:"multicluster"`
+	MonitoringOptions    *prometheus.Options         `json:"monitoring,omitempty" yaml:"monitoring,omitempty" mapstructure:"monitoring"`
+	ComponentOptions     *helm.Options               `json:"component,omitempty" yaml:"component,omitempty" mapstructure:"component"`
+	EcrCredentialOptions *tools.EcrCredentialOptions `json:"ecrCredentialOptions,omitempty" yaml:"ecrCredentialOptions,omitempty" mapstructure:"ecrCredentialOptions"`
 }
 
 // newConfig creates a default non-empty Config
 func New() *Config {
 	return &Config{
-		KubernetesOptions:   k8s.NewKubernetesOptions(),
-		RedisOptions:        cache.NewRedisOptions(),
-		MultiClusterOptions: multicluster.NewOptions(),
-		MonitoringOptions:   prometheus.NewPrometheusOptions(),
-		ComponentOptions:    helm.NewOptions(),
+		KubernetesOptions:    k8s.NewKubernetesOptions(),
+		RedisOptions:         cache.NewRedisOptions(),
+		MultiClusterOptions:  multicluster.NewOptions(),
+		MonitoringOptions:    prometheus.NewPrometheusOptions(),
+		ComponentOptions:     helm.NewOptions(),
+		EcrCredentialOptions: tools.NewEcrCredentialOptions(),
 	}
 }
 
@@ -174,6 +177,9 @@ func (conf *Config) stripEmptyOptions() {
 
 	if conf.MonitoringOptions != nil && conf.MonitoringOptions.Endpoint == "" {
 		conf.MonitoringOptions = nil
+	}
+	if conf.EcrCredentialOptions != nil && conf.EcrCredentialOptions.ApiGateway == "" {
+		conf.EcrCredentialOptions = nil
 	}
 
 }
