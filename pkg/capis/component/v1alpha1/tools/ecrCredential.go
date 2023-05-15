@@ -74,11 +74,11 @@ type Replay struct {
 
 // EcrCredentialOptions viper configmap读取的参数值
 type EcrCredentialOptions struct {
-	ApiGateway    string `json:"apiGateway" yaml:"apiGateway"`
-	AccessKey     string `json:"accessKey" yaml:"accessKey"`
-	SecretKey     string `json:"secretKey" yaml:"secretKey"`
-	ClearJobImage string `json:"clearJobImage" yaml:"clearJobImage"`
-	ReNewJobImage string `json:"reNewJobImage" yaml:"reNewJobImage"`
+	ApiGateway          string `json:"apiGateway" yaml:"apiGateway"`
+	AccessKey           string `json:"accessKey" yaml:"accessKey"`
+	SecretKey           string `json:"secretKey" yaml:"secretKey"`
+	ValuesImageRegistry string `json:"valuesImageRegistry" yaml:"valuesImageRegistry"`
+	ValuesTag           string `json:"valuesTag" yaml:"valuesTag"`
 }
 
 func NewEcrCredentialOptions() *EcrCredentialOptions {
@@ -145,28 +145,45 @@ func NewEcrCredential(client *helm.Client, kubeClient *kubernetes.Clientset, clu
 	return ec, nil
 }
 
-func (p *EcrCredential) setDefaultValue(clusterComponent *model.ClusterComponent, isInstall bool) {
+func (p *EcrCredential) setDefaultValue(clusterComponent *model.ClusterComponent, isInstall bool) error {
 	values := map[string]interface{}{}
+	var err error
 	//根据不同版本EcrCredential填充  保留isInstall做控制
-
 	switch clusterComponent.ChartVersion {
-	case "0.1.0":
-		values = p.valuse010Binding()
-
+	case "1.0.0":
+		values, err = p.valuse010Binding()
+	default:
+		return err
 	}
-
 	p.values = values
+	return err
 }
 
-func (p *EcrCredential) valuse010Binding() map[string]interface{} {
+func (p *EcrCredential) valuse010Binding() (map[string]interface{}, error) {
 
 	values := map[string]interface{}{}
 
+	opts, err := getEcrOpts()
+	if err != nil {
+		return nil, err
+	}
+	//灵活控制helm values的仓库值 单云池唯一
+
+	var defaultImageRegistry string
+	lastIndex := len(opts.ValuesImageRegistry) - 1
+	if string(opts.ValuesImageRegistry[lastIndex]) == "/" {
+		defaultImageRegistry = opts.ValuesImageRegistry[:lastIndex]
+	} else {
+		defaultImageRegistry = opts.ValuesImageRegistry
+	}
+	values["defaultImageRegistry"] = defaultImageRegistry
 	/* image根据 chart版本控制
 	values["defaultImageRegistry"] = defaultIMageRegistry
 	values["image.tag"] = "v1"
-	values["initJob.initJobImage.tag"] = "v1.0.0"
+	values["initJob.initJobImage.tag"] = "1.0.0"
 	*/
+	values["image.tag"] = opts.ValuesTag
+	values["initJob.initJobImage.tag"] = opts.ValuesTag
 	values["ingress.enabled"] = false
 	values["autoscaling.enabled"] = false
 	values["serviceAccount.create"] = true
@@ -181,16 +198,19 @@ func (p *EcrCredential) valuse010Binding() map[string]interface{} {
 
 	values["service.type"] = "ClusterIP"
 
-	return values
+	return values, nil
 }
 
 func (p *EcrCredential) Install() (*release.Release, error) {
 
 	//抽离对Parameters操作  即configmap secret
-	p.setDefaultValue(p.clusterComponent, true)
+	err := p.setDefaultValue(p.clusterComponent, true)
+	if err != nil {
+		return nil, err
+	}
 
 	// ecr创建临时用户
-	err := p.setRegistrySecret(true)
+	err = p.setRegistrySecret(true)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +241,7 @@ func (p *EcrCredential) Upgrade() (*release.Release, error) {
 	get, err := p.kubeClient.CoreV1().ConfigMaps(DefaultEcrCredentialNamespace).Get(context.TODO(), DefaultEcrCredentialConfigMap, v1.GetOptions{})
 	if !isNotFound(err) {
 		if err != nil {
-			klog.Errorf("upgrade phase get configmap err %v", err)
+			klog.Infof("upgrade phase get configmap err %v", err)
 			return nil, err
 		}
 
@@ -237,12 +257,15 @@ func (p *EcrCredential) Upgrade() (*release.Release, error) {
 	}
 
 	if upgrade == true {
-		p.setDefaultValue(p.clusterComponent, false)
+		err = p.setDefaultValue(p.clusterComponent, false)
+		if err != nil {
+			return nil, err
+		}
 
 		//clearJob
 		job, err := genJob("clear")
 		if err != nil {
-			klog.Errorf("genJob error %v ", err)
+			klog.Infof("genJob error %v ", err)
 			return nil, err
 		}
 
@@ -299,7 +322,7 @@ func (p *EcrCredential) Upgrade() (*release.Release, error) {
 	//renewJob
 	job, err := genJob("renew")
 	if err != nil {
-		klog.Errorf("genJob error %v ", err)
+		klog.Infof("genJob error %v ", err)
 		return nil, err
 	}
 	options := v1.ListOptions{
@@ -337,7 +360,7 @@ func (p *EcrCredential) Uninstall() (*release.UninstallReleaseResponse, error) {
 	// clear job执行
 	job, err := genJob("clear")
 	if err != nil {
-		klog.Errorf("genJob error %v ", err)
+		klog.Infof("genJob error %v ", err)
 		return nil, err
 	}
 	options := v1.ListOptions{
@@ -361,6 +384,7 @@ func (p *EcrCredential) Uninstall() (*release.UninstallReleaseResponse, error) {
 		return nil, errors.New(fmt.Sprintf("exec job error %v", err))
 	}
 
+	//clusterRole clusterRoleBinding serviceAccount helm卸载的时候 自动删除
 	return uninstall(p.client, p.kubeClient, p.release, DefaultEcrCredentialIngressName, p.clusterComponent.Namespace)
 
 }
@@ -426,13 +450,13 @@ func (p *EcrCredential) createCm(configInfo configInfo) error {
 		}
 		_, err = p.kubeClient.CoreV1().ConfigMaps(DefaultEcrCredentialNamespace).Create(context.TODO(), &newConf, v1.CreateOptions{})
 		if err != nil {
-			klog.Errorf("create EcrCredential Configmap error %v", err)
+			klog.Infof("create EcrCredential Configmap error %v", err)
 			return err
 		}
 	} else if err != nil {
 
 		if err != nil {
-			klog.Errorf("get EcrCredential Configmap error %v", err)
+			klog.Infof("get EcrCredential Configmap error %v", err)
 			return err
 		}
 	} else {
@@ -443,7 +467,7 @@ func (p *EcrCredential) createCm(configInfo configInfo) error {
 
 		_, err = p.kubeClient.CoreV1().ConfigMaps(DefaultEcrCredentialNamespace).Update(context.TODO(), get, v1.UpdateOptions{})
 		if err != nil {
-			klog.Errorf("update EcrCredential Configmap error %v", err)
+			klog.Infof("update EcrCredential Configmap error %v", err)
 			return err
 		}
 	}
@@ -463,13 +487,13 @@ func (p *EcrCredential) deleteEcrUser() error {
 	if isNotFound(err) {
 		user = GenUser(p.clusterComponent.CkeClusterId, false)
 	} else if err != nil {
-		klog.Errorf("deleteEcrUser phase get secret error %v", err)
+		klog.Infof("deleteEcrUser phase get secret error %v", err)
 		return err
 
 	} else {
 		err = json.Unmarshal(get.Data["auth"], &user)
 		if err != nil {
-			klog.Errorf("Unmarshal secret  auth  error %v", err)
+			klog.Infof("Unmarshal secret  auth  error %v", err)
 			return err
 		}
 	}
@@ -554,7 +578,7 @@ func (p *EcrCredential) createOrUpdateEcrUser(secretList []DbAuth, isinstall boo
 		_, err = p.kubeClient.CoreV1().Secrets(DefaultEcrCredentialNamespace).Create(context.TODO(), &newSecret, v1.CreateOptions{})
 
 		if err != nil {
-			klog.Errorf("create auth info secret error %v", err)
+			klog.Infof("create auth info secret error %v", err)
 			return err
 		}
 		return err
@@ -614,7 +638,7 @@ func (p *EcrCredential) createOrUpdateEcrUser(secretList []DbAuth, isinstall boo
 		_, err = p.kubeClient.CoreV1().Secrets(DefaultEcrCredentialNamespace).Update(context.TODO(), get, v1.UpdateOptions{})
 
 		if err != nil {
-			klog.Errorf("recreate auth info secret error %v", err)
+			klog.Infof("recreate auth info secret error %v", err)
 			return err
 		}
 		return err
@@ -676,7 +700,7 @@ func getEcrOpts() (*EcrCredentialOptions, error) {
 	//getApiGateWay  readConfig
 	config, err := config.TryLoadFromDisk()
 	if err != nil {
-		klog.Errorf("Failed to load configuration from disk", err)
+		klog.Infof("Failed to load configuration from disk", err)
 		return nil, err
 	} else {
 
@@ -852,7 +876,7 @@ func genJob(jobType string) (v12.Job, error) {
 		command = append(command, "/test/renewJob")
 		con := corev1.Container{
 			Name:            "renew-job",
-			Image:           opts.ReNewJobImage,
+			Image:           GenJobImage(opts.ValuesImageRegistry, "renew", opts.ValuesTag),
 			ImagePullPolicy: "IfNotPresent",
 			Command:         command,
 		}
@@ -885,7 +909,7 @@ func genJob(jobType string) (v12.Job, error) {
 		command = append(command, "/test/clearJob")
 		con := corev1.Container{
 			Name:            "clear-job",
-			Image:           opts.ClearJobImage,
+			Image:           GenJobImage(opts.ValuesImageRegistry, "clear", opts.ValuesTag),
 			ImagePullPolicy: "IfNotPresent",
 			Command:         command,
 		}
@@ -940,4 +964,20 @@ func GenUserUpdateRequest(username string, dbAuth []DbAuth) ecrUser {
 // GenUserDeleteRequest 预留
 func GenUserDeleteRequest(user ecrUser) ecrUser {
 	return user
+}
+
+func GenJobImage(rg string, jobType string, tag string) string {
+	//最后一个字符是否为/
+	lastIndex := len(rg) - 1
+	if string(rg[lastIndex]) != "/" {
+		rg = rg + "/"
+	}
+	switch jobType {
+	case "renew":
+		return fmt.Sprintf(rg + "ecr-credential-renew-job" + tag)
+	case "clear":
+		return fmt.Sprintf(rg + "ecr-credential-clear-job " + tag)
+	default:
+		return ""
+	}
 }
