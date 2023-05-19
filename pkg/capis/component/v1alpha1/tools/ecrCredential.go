@@ -99,9 +99,9 @@ type EcrCredential struct {
 
 type configInfo struct {
 	//version从helm里面取
-	Version        string `yaml:"ecr-api-version"`
-	ServiceAccount string `yaml:"service-account"`
-	Namespace      string `yaml:"namespace"`
+	Version        string `yaml:"ecr-api-version" json:"version"`
+	ServiceAccount string `yaml:"service-account" json:"service-account"`
+	Namespace      string `yaml:"namespace" json:"namespace"`
 }
 
 // secret存储
