@@ -172,8 +172,6 @@ func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[s
 	values["ingress.enabled"] = false
 	values["autoscaling.enabled"] = false
 	values["serviceAccount.create"] = true
-	values["registrySecret.enable"] = true
-	values["registrySecret.enable"] = true
 	values["resources.limits.cpu"] = "200m"
 	values["resources.limits.memory"] = "512Mi"
 	values["resources.requests.cpu"] = "100m"
@@ -197,6 +195,7 @@ func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[s
 	configMap["ecrRegistry"] = rg
 	secret["userName"] = user.Username
 	secret["password"] = user.Passwd
+	secret["enable"] = true
 	values["configMap"] = configMap
 	values["registrySecret"] = secret
 
