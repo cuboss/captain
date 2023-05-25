@@ -26,23 +26,15 @@ import (
 )
 
 const (
-	//DefaultEcrCredentialServiceName = "ecr-credential-svc"
-
-	DefaultEcrCredentialDeploymentName     = "ecr-credential"
-	DefaultEcrCredentialNamespace          = "kube-system"
-	DefaultEcrCredentialServiceAccountName = "ecr-helper-sa"
-	DefaultEcrCredentialConfigMap          = "ecr-helper-cm"
-
-	DefaultEcrCredentialRgSecret = "ecr-helper-secret"
-
-	createEcrUserUri = "/csk/createtemporaryuser"
-	UpdateEcrUserUri = "/csk/updatetemporaryuser"
-	deleteEcrUserUri = "/csk/deletetemporaryuser"
-
-	HeaderContentType          = "Content-Type"
-	HeaderJSONContentTypeValue = "application/json"
-
-	DefaultEcrCredentialIngressName = "ecrCredential-ingress"
+	DefaultEcrCredentialDeploymentName = "ecr-credential"
+	DefaultEcrCredentialNamespace      = "kube-system"
+	DefaultEcrCredentialRgSecret       = "ecr-helper-secret"
+	createEcrUserUri                   = "/csk/createtemporaryuser"
+	UpdateEcrUserUri                   = "/csk/updatetemporaryuser"
+	deleteEcrUserUri                   = "/csk/deletetemporaryuser"
+	HeaderContentType                  = "Content-Type"
+	HeaderJSONContentTypeValue         = "application/json"
+	DefaultEcrCredentialIngressName    = "ecrCredential-ingress"
 )
 
 type auth struct {
@@ -157,7 +149,8 @@ func (p *EcrCredential) setDefaultValue(clusterComponent *model.ClusterComponent
 func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[string]interface{}, error) {
 
 	values := map[string]interface{}{}
-
+	configMap := map[string]interface{}{}
+	secret := map[string]interface{}{}
 	opts, err := getEcrOpts()
 	if err != nil {
 		return nil, err
@@ -179,27 +172,33 @@ func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[s
 	values["ingress.enabled"] = false
 	values["autoscaling.enabled"] = false
 	values["serviceAccount.create"] = true
-	//cm 和 secret 由captain控制
 	values["registrySecret.enable"] = true
-	values["configMap.enabled"] = true
-	values["configMap.namespace"] = config.Namespace
-	values["configMap.serviceAccount"] = config.ServiceAccount
-	values["configMap.apiVersion"] = opts.ValuesTag
+	values["registrySecret.enable"] = true
+	values["resources.limits.cpu"] = "200m"
+	values["resources.limits.memory"] = "512Mi"
+	values["resources.requests.cpu"] = "100m"
+	values["resources.requests.memory"] = "256Mi"
+	values["service.type"] = "ClusterIP"
+
+	values, err = MergeValueMap(values)
+	if err != nil {
+		return nil, err
+	}
 	var rg []string
 	err = yaml.Unmarshal([]byte(config.EcrRegistry), &rg)
 	if err != nil {
 		return nil, err
 	}
-	values["configMap.ecrRegistry"] = rg
-	values["registrySecret.userName"] = user.Username
-	values["registrySecret.password"] = user.Passwd
-
-	values["resources.limits.cpu"] = "200m"
-	values["resources.limits.memory"] = "512Mi"
-	values["resources.requests.cpu"] = "100m"
-	values["resources.requests.memory"] = "256Mi"
-
-	values["service.type"] = "ClusterIP"
+	//cm 和 secret 由captain控制
+	configMap["apiVersion"] = opts.ValuesTag
+	configMap["enabled"] = true
+	configMap["namespace"] = config.Namespace
+	configMap["serviceAccount"] = config.ServiceAccount
+	configMap["ecrRegistry"] = rg
+	secret["userName"] = user.Username
+	secret["password"] = user.Passwd
+	values["configMap"] = configMap
+	values["registrySecret"] = secret
 
 	return values, nil
 }
@@ -471,7 +470,7 @@ func genUrl(endpoint, path string) string {
 func genRandomPassword(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	digits := "0123456789"
-	specials := "~=+%^*/()[]{}/!@#$?|"
+	specials := "~%^*!@#$?"
 	all := "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
 		"abcdefghijklmnopqrstuvwxyz" +
 		digits + specials
