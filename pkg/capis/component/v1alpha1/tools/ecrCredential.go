@@ -12,8 +12,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/release"
 	"io/ioutil"
-	v12 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	erros2 "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -21,7 +19,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,25 +26,15 @@ import (
 )
 
 const (
-	//DefaultEcrCredentialServiceName = "ecr-credential-svc"
-
-	DefaultEcrCredentialDeploymentName     = "ecr-credential-deployment"
-	DefaultEcrCredentialNamespace          = "kube-system"
-	DefaultEcrCredentialReNewJobName       = "ecr-credential-renew-job"
-	DefaultEcrCredentialClearJobName       = "ecr-credential-clear-job"
-	DefaultEcrCredentialServiceAccountName = "ecr-helper-sa"
-	DefaultEcrCredentialConfigMap          = "ecr-helper-cm"
-
-	DefaultEcrCredentialRgSecret = "ecr-helper-secret"
-
-	createEcrUserUri = "/csk/createtemporaryuser"
-	UpdateEcrUserUri = "/csk/updatetemporaryuser"
-	deleteEcrUserUri = "/csk/deletetemporaryuser"
-
-	HeaderContentType          = "Content-Type"
-	HeaderJSONContentTypeValue = "application/json"
-
-	DefaultEcrCredentialIngressName = "ecrCredential-ingress"
+	DefaultEcrCredentialDeploymentName = "ecr-credential"
+	DefaultEcrCredentialNamespace      = "kube-system"
+	DefaultEcrCredentialRgSecret       = "ecr-helper-secret"
+	createEcrUserUri                   = "/csk/createtemporaryuser"
+	UpdateEcrUserUri                   = "/csk/updatetemporaryuser"
+	deleteEcrUserUri                   = "/csk/deletetemporaryuser"
+	HeaderContentType                  = "Content-Type"
+	HeaderJSONContentTypeValue         = "application/json"
+	DefaultEcrCredentialIngressName    = "ecrCredential-ingress"
 )
 
 type auth struct {
@@ -74,11 +61,11 @@ type Replay struct {
 
 // EcrCredentialOptions viper configmap读取的参数值
 type EcrCredentialOptions struct {
-	ApiGateway    string `json:"apiGateway" yaml:"apiGateway"`
-	AccessKey     string `json:"accessKey" yaml:"accessKey"`
-	SecretKey     string `json:"secretKey" yaml:"secretKey"`
-	ClearJobImage string `json:"clearJobImage" yaml:"clearJobImage"`
-	ReNewJobImage string `json:"reNewJobImage" yaml:"reNewJobImage"`
+	ApiGateway          string `json:"apiGateway" yaml:"apiGateway"`
+	AccessKey           string `json:"accessKey" yaml:"accessKey"`
+	SecretKey           string `json:"secretKey" yaml:"secretKey"`
+	ValuesImageRegistry string `json:"valuesImageRegistry" yaml:"valuesImageRegistry"`
+	ValuesTag           string `json:"valuesTag" yaml:"valuesTag"`
 }
 
 func NewEcrCredentialOptions() *EcrCredentialOptions {
@@ -99,9 +86,10 @@ type EcrCredential struct {
 
 type configInfo struct {
 	//version从helm里面取
-	Version        string `yaml:"ecr-api-version"`
-	ServiceAccount string `yaml:"service-account"`
-	Namespace      string `yaml:"namespace"`
+	Version        string `yaml:"ecr-api-version" json:"version"`
+	ServiceAccount string `yaml:"service-account" json:"service-account"`
+	Namespace      string `yaml:"namespace" json:"namespace"`
+	EcrRegistry    string `yaml:"ecr-registry,omitempty" json:"ecr-registry,omitempty"`
 }
 
 // secret存储
@@ -137,69 +125,101 @@ func NewEcrCredential(client *helm.Client, kubeClient *kubernetes.Clientset, clu
 		client:           client,
 		kubeClient:       kubeClient,
 		clusterComponent: clusterComponent,
-
-		release: clusterComponent.ReleaseName,
-		chart:   clusterComponent.ChartName,
-		version: clusterComponent.ChartVersion,
+		release:          clusterComponent.ReleaseName,
+		chart:            clusterComponent.ChartName,
+		version:          clusterComponent.ChartVersion,
 	}
 	return ec, nil
 }
 
-func (p *EcrCredential) setDefaultValue(clusterComponent *model.ClusterComponent, isInstall bool) {
+func (p *EcrCredential) setDefaultValue(clusterComponent *model.ClusterComponent, config configInfo, user ecrUser, isInstall bool) error {
 	values := map[string]interface{}{}
+	var err error
 	//根据不同版本EcrCredential填充  保留isInstall做控制
-
 	switch clusterComponent.ChartVersion {
-	case "0.1.0":
-		values = p.valuse010Binding()
-
+	case "1.0.0":
+		values, err = p.valuse010Binding(config, user)
+	default:
+		return err
 	}
-
 	p.values = values
+	return err
 }
 
-func (p *EcrCredential) valuse010Binding() map[string]interface{} {
+func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[string]interface{}, error) {
 
 	values := map[string]interface{}{}
+	configMap := map[string]interface{}{}
+	secret := map[string]interface{}{}
+	opts, err := getEcrOpts()
+	if err != nil {
+		return nil, err
+	}
+	//灵活控制helm values的仓库值 单云池唯一
 
-	/* image根据 chart版本控制
-	values["defaultImageRegistry"] = defaultIMageRegistry
-	values["image.tag"] = "v1"
-	values["initJob.initJobImage.tag"] = "v1.0.0"
-	*/
+	var defaultImageRegistry string
+	lastIndex := len(opts.ValuesImageRegistry) - 1
+	if string(opts.ValuesImageRegistry[lastIndex]) == "/" {
+		defaultImageRegistry = opts.ValuesImageRegistry[:lastIndex]
+	} else {
+		defaultImageRegistry = opts.ValuesImageRegistry
+	}
+	values["defaultImageRegistry"] = defaultImageRegistry
+	//如果需要调整镜像版本 修改漏洞的话 修改tag
+	values["image.tag"] = opts.ValuesTag
+	values["initJob.initJobImage.tag"] = opts.ValuesTag
+	values["clearJob.clearJobImage.tag"] = opts.ValuesTag
 	values["ingress.enabled"] = false
 	values["autoscaling.enabled"] = false
 	values["serviceAccount.create"] = true
-	//cm 和 secret 由captain控制
-	values["registrySecret.enable"] = false
-	values["configMap.enabled"] = false
-
 	values["resources.limits.cpu"] = "200m"
 	values["resources.limits.memory"] = "512Mi"
 	values["resources.requests.cpu"] = "100m"
 	values["resources.requests.memory"] = "256Mi"
-
 	values["service.type"] = "ClusterIP"
 
-	return values
+	values, err = MergeValueMap(values)
+	if err != nil {
+		return nil, err
+	}
+	var rg []string
+	err = yaml.Unmarshal([]byte(config.EcrRegistry), &rg)
+	if err != nil {
+		return nil, err
+	}
+	//cm 和 secret 由captain控制
+	configMap["apiVersion"] = opts.ValuesTag
+	configMap["enabled"] = true
+	configMap["namespace"] = config.Namespace
+	configMap["serviceAccount"] = config.ServiceAccount
+	configMap["ecrRegistry"] = rg
+	secret["userName"] = user.Username
+	secret["password"] = user.Passwd
+	secret["enable"] = true
+	values["configMap"] = configMap
+	values["registrySecret"] = secret
+
+	return values, nil
 }
 
 func (p *EcrCredential) Install() (*release.Release, error) {
 
-	//抽离对Parameters操作  即configmap secret
-	p.setDefaultValue(p.clusterComponent, true)
-
 	// ecr创建临时用户
-	err := p.setRegistrySecret(true)
+	user, rg, err := p.setEcrUser(true)
+	if err != nil {
+		return nil, err
+	}
+	//获取configmap
+	conf, err := p.setCredentialCm(rg, true)
 	if err != nil {
 		return nil, err
 	}
 
-	//更新configmap
-	err = p.setCredentialCm(true)
+	err = p.setDefaultValue(p.clusterComponent, conf, user, true)
 	if err != nil {
 		return nil, err
 	}
+
 	// init-job在helm 中通过钩子执行
 
 	release, err := installChart(p.client, p.release, p.chart, p.version, p.values)
@@ -215,152 +235,34 @@ func (p *EcrCredential) Install() (*release.Release, error) {
 }
 
 func (p *EcrCredential) Upgrade() (*release.Release, error) {
-
-	upgrade := false
-	emptyConfig := configInfo{}
-	get, err := p.kubeClient.CoreV1().ConfigMaps(DefaultEcrCredentialNamespace).Get(context.TODO(), DefaultEcrCredentialConfigMap, v1.GetOptions{})
-	if !isNotFound(err) {
-		if err != nil {
-			klog.Errorf("upgrade phase get configmap err %v", err)
-			return nil, err
-		}
-
-		currentCf := get.Data["configmap-ep.yaml"]
-		err = yaml.Unmarshal([]byte(currentCf), &emptyConfig)
-		if err != nil {
-			return nil, err
-		}
-		//版本不一致触发更新chart
-		if emptyConfig.Version != p.version {
-			upgrade = true
-		}
-	}
-
-	if upgrade == true {
-		p.setDefaultValue(p.clusterComponent, false)
-
-		//clearJob
-		job, err := genJob("clear")
-		if err != nil {
-			klog.Errorf("genJob error %v ", err)
-			return nil, err
-		}
-
-		options := v1.ListOptions{
-			LabelSelector: "app.kubernetes.io/name=ecr-credential",
-		}
-		list, err := p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).List(context.TODO(), options)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("list job error %v", err))
-		}
-
-		for _, i := range list.Items {
-			if strings.Contains(i.Name, DefaultEcrCredentialClearJobName) {
-				err = p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).Delete(context.TODO(), i.Name, v1.DeleteOptions{})
-				if err != nil {
-					return nil, errors.New(fmt.Sprintf("delete old  job error %v", err))
-				}
-			}
-		}
-		_, err = p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).Create(context.TODO(), &job, v1.CreateOptions{})
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("exec job error %v", err))
-		}
-
-		//重新创建临时用户 此时环境能铲除 但是ecr数据库依然存在
-		err = p.setRegistrySecret(false)
-		if err != nil {
-			return nil, err
-		}
-
-		//更新configmap
-		err = p.setCredentialCm(false)
-		if err != nil {
-			return nil, err
-		}
-
-		//更新chart 重新生成证书
-		rel, err := upgradeChart(p.client, p.release, p.chart, p.version, p.values)
-		return rel, err
-	}
-
-	// ecr检查临时用户 全量更新
-	err = p.setRegistrySecret(false)
+	// ecr创建临时用户
+	user, rg, err := p.setEcrUser(false)
 	if err != nil {
 		return nil, err
 	}
-
-	//更新configmap
-	err = p.setCredentialCm(false)
+	//获取configmap
+	conf, err := p.setCredentialCm(rg, false)
 	if err != nil {
 		return nil, err
 	}
-
-	//renewJob
-	job, err := genJob("renew")
+	err = p.setDefaultValue(p.clusterComponent, conf, user, false)
 	if err != nil {
-		klog.Errorf("genJob error %v ", err)
 		return nil, err
 	}
-	options := v1.ListOptions{
-		LabelSelector: "app.kubernetes.io/name=ecr-credential",
-	}
-	list, err := p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).List(context.TODO(), options)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("list job error %v", err))
-	}
+	//更新chart 重新生成证书
+	rel, err := upgradeChart(p.client, p.release, p.chart, p.version, p.values)
+	return rel, err
 
-	for _, i := range list.Items {
-		if strings.Contains(i.Name, DefaultEcrCredentialReNewJobName) {
-			err = p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).Delete(context.TODO(), i.Name, v1.DeleteOptions{})
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("delete old  job error %v", err))
-			}
-		}
-	}
-	_, err = p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).Create(context.TODO(), &job, v1.CreateOptions{})
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("exec job error %v", err))
-	}
-
-	return nil, err
 }
 
 func (p *EcrCredential) Uninstall() (*release.UninstallReleaseResponse, error) {
-
 	//delete ecr临时用户
 	err := p.deleteEcrUser()
 	if err != nil {
 		return nil, err
 	}
 
-	// clear job执行
-	job, err := genJob("clear")
-	if err != nil {
-		klog.Errorf("genJob error %v ", err)
-		return nil, err
-	}
-	options := v1.ListOptions{
-		LabelSelector: "app.kubernetes.io/name=ecr-credential",
-	}
-	list, err := p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).List(context.TODO(), options)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("list job error %v", err))
-	}
-
-	for _, i := range list.Items {
-		if strings.Contains(i.Name, DefaultEcrCredentialClearJobName) {
-			err = p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).Delete(context.TODO(), i.Name, v1.DeleteOptions{})
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("delete old  job error %v", err))
-			}
-		}
-	}
-	_, err = p.kubeClient.BatchV1().Jobs(DefaultEcrCredentialNamespace).Create(context.TODO(), &job, v1.CreateOptions{})
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("exec job error %v", err))
-	}
-
+	//clusterRole clusterRoleBinding serviceAccount helm卸载的时候 自动删除
 	return uninstall(p.client, p.kubeClient, p.release, DefaultEcrCredentialIngressName, p.clusterComponent.Namespace)
 
 }
@@ -372,83 +274,41 @@ func (p *EcrCredential) Status(release string) ([]model.ClusterComponentResStatu
 }
 
 // setCredentialCm 处理前端传入的值
-func (p *EcrCredential) setCredentialCm(install bool) error {
+func (p *EcrCredential) setCredentialCm(rg []string, install bool) (configInfo, error) {
 	i, ok := p.clusterComponent.Parameters["configmap"]
 	if ok {
-		err := p.createCm(i.(configInfo))
-		if err != nil {
-			return err
-		}
+		config := i.(configInfo)
+		out, _ := yaml.Marshal(rg)
+		config.EcrRegistry = string(out)
+		return config, nil
 	} else {
-		err := p.createCm(configInfo{})
-		if err != nil {
-			return err
-		}
+		return configInfo{}, errors.New("Parameters configmap error")
 	}
 
-	return nil
 }
 
 // SetRegistrySecret 处理前端传入的值
-func (p *EcrCredential) setRegistrySecret(isInstall bool) error {
+func (p *EcrCredential) setEcrUser(isInstall bool) (ecrUser, []string, error) {
 	//install 和update时 用到
 	//全量更新 后续可优化
+	rg := []string{}
 	i, ok := p.clusterComponent.Parameters["auth"]
 	if ok {
-		err := p.createOrUpdateEcrUser(i.([]DbAuth), isInstall)
+		user, err := p.createOrUpdateEcrUser(i.([]DbAuth), isInstall)
 		if err != nil {
-			return err
+			return ecrUser{}, rg, err
 		}
+		for _, v := range i.([]DbAuth) {
+			rg = append(rg, v.HarborServer)
+		}
+		return user, rg, err
+
 	} else {
-		err := p.createOrUpdateEcrUser([]DbAuth{}, isInstall)
-		if err != nil {
-			return err
-		}
+		return ecrUser{}, rg, errors.New("Parameters auth error")
+
 	}
-	return nil
 }
 
-func (p *EcrCredential) createCm(configInfo configInfo) error {
-
-	get, err := p.kubeClient.CoreV1().ConfigMaps(DefaultEcrCredentialNamespace).Get(context.TODO(), DefaultEcrCredentialConfigMap, v1.GetOptions{})
-	if isNotFound(err) {
-		configInfo = setcfDefault(configInfo, p.version)
-		data := make(map[string]string)
-		marshal, _ := yaml.Marshal(configInfo)
-
-		data["configmap-ep.yaml"] = string(marshal)
-		newConf := corev1.ConfigMap{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      DefaultEcrCredentialConfigMap,
-				Namespace: DefaultEcrCredentialNamespace,
-			},
-			Data: data,
-		}
-		_, err = p.kubeClient.CoreV1().ConfigMaps(DefaultEcrCredentialNamespace).Create(context.TODO(), &newConf, v1.CreateOptions{})
-		if err != nil {
-			klog.Errorf("create EcrCredential Configmap error %v", err)
-			return err
-		}
-	} else if err != nil {
-
-		if err != nil {
-			klog.Errorf("get EcrCredential Configmap error %v", err)
-			return err
-		}
-	} else {
-
-		configInfo = setcfDefault(configInfo, p.version)
-		marshal, _ := yaml.Marshal(configInfo)
-		get.Data["configmap-ep.yaml"] = string(marshal)
-
-		_, err = p.kubeClient.CoreV1().ConfigMaps(DefaultEcrCredentialNamespace).Update(context.TODO(), get, v1.UpdateOptions{})
-		if err != nil {
-			klog.Errorf("update EcrCredential Configmap error %v", err)
-			return err
-		}
-	}
-	return err
-}
 func isNotFound(err error) bool {
 	if err == nil {
 		return false
@@ -463,15 +323,10 @@ func (p *EcrCredential) deleteEcrUser() error {
 	if isNotFound(err) {
 		user = GenUser(p.clusterComponent.CkeClusterId, false)
 	} else if err != nil {
-		klog.Errorf("deleteEcrUser phase get secret error %v", err)
+		klog.Infof("deleteEcrUser phase get secret error %v", err)
 		return err
-
 	} else {
-		err = json.Unmarshal(get.Data["auth"], &user)
-		if err != nil {
-			klog.Errorf("Unmarshal secret  auth  error %v", err)
-			return err
-		}
+		user.Username = string(get.Data["user-name"])
 	}
 	opts, err := getEcrOpts()
 	if err != nil {
@@ -481,8 +336,6 @@ func (p *EcrCredential) deleteEcrUser() error {
 	url := genUrl(opts.ApiGateway, deleteEcrUserUri)
 	httpClient := newHttpClient(url, opts.AccessKey, opts.SecretKey)
 
-	//deleteBody
-	//deleteRequest := GenUserDeleteRequest(user)
 	r, err := httpClient.Partner().WithRawBody(user).DEL()
 	if err != nil {
 		//如果用户不存在 认为删除成功
@@ -496,99 +349,44 @@ func (p *EcrCredential) deleteEcrUser() error {
 }
 
 // createOrUpdateEcrUser 请求ECR创建和更新临时用户
-func (p *EcrCredential) createOrUpdateEcrUser(secretList []DbAuth, isinstall bool) error {
-
-	//get检验是否已存在用户 仅在集群内  ecr侧 如果存在 直接覆盖
-
-	get, err := p.kubeClient.CoreV1().Secrets(DefaultEcrCredentialNamespace).Get(context.TODO(), DefaultEcrCredentialRgSecret, v1.GetOptions{})
-	if isNotFound(err) {
-		//创建临时用户
-
-		var url string
-		var user ecrUser
-		opts, err := getEcrOpts()
-		if err != nil {
-			return err
-		}
-		if isinstall {
-			url = genUrl(opts.ApiGateway, createEcrUserUri)
-			user = GenUser(p.clusterComponent.CkeClusterId, true)
-
-		} else {
-			//如果是升级 更新用户
-			url = genUrl(opts.ApiGateway, UpdateEcrUserUri)
-			user = GenUser(p.clusterComponent.CkeClusterId, false)
-		}
-
-		secret := setUser(user, secretList)
-		data := make(map[string]string)
-		marshal, _ := json.Marshal(user)
-		data["auth"] = string(marshal)
-
-		if len(secret) != 0 {
-			rgs, _ := json.Marshal(secret)
-			data["ecrRegistry"] = string(rgs)
-		} else {
-			return errors.New("auth is empty")
-		}
-
-		newSecret := corev1.Secret{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      DefaultEcrCredentialRgSecret,
-				Namespace: DefaultEcrCredentialNamespace,
-			},
-			Type:       corev1.SecretTypeOpaque,
-			StringData: data,
-		}
-
+func (p *EcrCredential) createOrUpdateEcrUser(secretList []DbAuth, isinstall bool) (ecrUser, error) {
+	var url string
+	var user ecrUser
+	opts, err := getEcrOpts()
+	if err != nil {
+		return ecrUser{}, err
+	}
+	if isinstall {
+		url = genUrl(opts.ApiGateway, createEcrUserUri)
+		user = GenUser(p.clusterComponent.CkeClusterId, true)
 		httpClient := newHttpClient(url, opts.AccessKey, opts.SecretKey)
-
 		createRequest := GenUserCreateRequest(user, secretList)
-
 		_, err = httpClient.Partner().WithRawBody(createRequest).Post()
 		if err != nil {
 			//重复创建 仍然为200
-			return errors.New(fmt.Sprintf("init ecr user error %v", err))
+			return user, errors.New(fmt.Sprintf("init ecr user error %v", err))
 		}
 
-		_, err = p.kubeClient.CoreV1().Secrets(DefaultEcrCredentialNamespace).Create(context.TODO(), &newSecret, v1.CreateOptions{})
-
-		if err != nil {
-			klog.Errorf("create auth info secret error %v", err)
-			return err
-		}
-		return err
-
-	} else if err != nil {
-		klog.Infof("get auth info secret error %v", err)
-		return err
+		return user, err
 	} else {
-		//临时账户已经存在  密码为空 不更新
-		opts, err := getEcrOpts()
-		if err != nil {
-			return err
-		}
-
-		var user ecrUser
-		err = json.Unmarshal(get.Data["auth"], &user)
-		if err != nil {
-			return err
-		}
-
-		//更新secret使用
-		secret := setUser(user, secretList)
-
-		if len(secret) != 0 {
-			rgs, _ := json.Marshal(secret)
-			get.Data["ecrRegistry"] = rgs
+		//如果是升级 更新用户
+		url = genUrl(opts.ApiGateway, UpdateEcrUserUri)
+		user = GenUser(p.clusterComponent.CkeClusterId, false)
+		//先去校验集群内的密码
+		get, err := p.kubeClient.CoreV1().Secrets(DefaultEcrCredentialNamespace).Get(context.TODO(), DefaultEcrCredentialRgSecret, v1.GetOptions{})
+		if isNotFound(err) {
+			//集群内没有存储用户名和密码 更新密码
+			user.Passwd = genRandomPassword(10)
 		} else {
-			return errors.New("RgAuthInfo is empty")
+			if err != nil {
+				return ecrUser{}, err
+			}
+			//使用旧密码
+			user.Passwd = string(get.Data["user-passwd"])
 		}
-
 		reCreateUrl := genUrl(opts.ApiGateway, UpdateEcrUserUri)
 		reCreateHttpClient := newHttpClient(reCreateUrl, opts.AccessKey, opts.SecretKey)
-
-		updateRequest := GenUserUpdateRequest(user.Username, secretList)
+		updateRequest := GenUserUpdateRequest(user, secretList)
 		r, err := reCreateHttpClient.Partner().WithRawBody(updateRequest).Put()
 		if err != nil {
 			//如果用户不存在 改为创建user
@@ -600,51 +398,15 @@ func (p *EcrCredential) createOrUpdateEcrUser(secretList []DbAuth, isinstall boo
 				reCreateHttpClient.url = createUrl
 				r, err = reCreateHttpClient.Partner().WithRawBody(createRequest).Post()
 				if r == nil {
-					return errors.New(fmt.Sprintf("recreate ecr user error %v", err))
+					return user, errors.New(fmt.Sprintf("recreate ecr user error %v", err))
 				}
-				//创建成功 更新secret的auth值
-				marshal, _ := json.Marshal(user)
-				get.Data["auth"] = marshal
-
+				return user, err
 			} else {
-				return errors.New(fmt.Sprintf("update ecr user error %v", err))
+				return user, errors.New(fmt.Sprintf("update ecr user error %v", err))
 			}
 		}
-
-		_, err = p.kubeClient.CoreV1().Secrets(DefaultEcrCredentialNamespace).Update(context.TODO(), get, v1.UpdateOptions{})
-
-		if err != nil {
-			klog.Errorf("recreate auth info secret error %v", err)
-			return err
-		}
-		return err
+		return user, err
 	}
-}
-func setcfDefault(cm configInfo, version string) configInfo {
-	if reflect.DeepEqual(cm, configInfo{}) {
-		cm.Namespace = "default"
-		cm.ServiceAccount = "default"
-	}
-	cm.Version = version
-	return cm
-}
-
-// setUser  创建生成的secret
-func setUser(user ecrUser, rg []DbAuth) []ecrSecret {
-	secrets := []ecrSecret{}
-	//如果为设置仓库信息 返回空切片
-	if len(rg) == 0 {
-		return secrets
-	}
-	//生成集群中的secret
-	for _, i := range rg {
-		secret := ecrSecret{
-			Server: i.HarborServer,
-			User:   user.User,
-		}
-		secrets = append(secrets, secret)
-	}
-	return secrets
 }
 
 func GenUser(clusterid string, updatePasswd bool) ecrUser {
@@ -668,7 +430,6 @@ func GenUser(clusterid string, updatePasswd bool) ecrUser {
 		}
 
 	}
-
 	return newUser
 }
 
@@ -676,7 +437,7 @@ func getEcrOpts() (*EcrCredentialOptions, error) {
 	//getApiGateWay  readConfig
 	config, err := config.TryLoadFromDisk()
 	if err != nil {
-		klog.Errorf("Failed to load configuration from disk", err)
+		klog.Infof("Failed to load configuration from disk", err)
 		return nil, err
 	} else {
 
@@ -708,7 +469,7 @@ func genUrl(endpoint, path string) string {
 func genRandomPassword(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	digits := "0123456789"
-	specials := "~=+%^*/()[]{}/!@#$?|"
+	specials := "~%^*!@#$?"
 	all := "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
 		"abcdefghijklmnopqrstuvwxyz" +
 		digits + specials
@@ -831,94 +592,6 @@ func (c *HttpClient) WithRawBody(raw interface{}) *HttpClient {
 	return c
 }
 
-func genJob(jobType string) (v12.Job, error) {
-	i := int32(3)
-	var backoffLimit *int32
-	backoffLimit = &i
-	lables := make(map[string]string)
-	lables["app.kubernetes.io/name"] = "ecr-credential"
-	lables["app.kubernetes.io/instance"] = "ecr-helper"
-
-	opts, err := getEcrOpts()
-	if err != nil {
-		return v12.Job{}, err
-	}
-	var command []string
-	cons := []corev1.Container{}
-	newJob := v12.Job{}
-	switch jobType {
-	case "renew":
-
-		command = append(command, "/test/renewJob")
-		con := corev1.Container{
-			Name:            "renew-job",
-			Image:           opts.ReNewJobImage,
-			ImagePullPolicy: "IfNotPresent",
-			Command:         command,
-		}
-
-		cons = append(cons, con)
-
-		newJob = v12.Job{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      DefaultEcrCredentialReNewJobName + fmt.Sprintf(time.Now().Format("200601021504")),
-				Namespace: DefaultEcrCredentialNamespace,
-			},
-			Spec: v12.JobSpec{
-				BackoffLimit: backoffLimit,
-				Template: corev1.PodTemplateSpec{
-
-					ObjectMeta: v1.ObjectMeta{
-						Name:   DefaultEcrCredentialReNewJobName,
-						Labels: lables,
-					},
-					Spec: corev1.PodSpec{
-						ServiceAccountName: DefaultEcrCredentialServiceAccountName,
-						RestartPolicy:      "OnFailure",
-						Containers:         cons,
-					},
-				},
-			},
-		}
-		return newJob, nil
-	case "clear":
-		command = append(command, "/test/clearJob")
-		con := corev1.Container{
-			Name:            "clear-job",
-			Image:           opts.ClearJobImage,
-			ImagePullPolicy: "IfNotPresent",
-			Command:         command,
-		}
-
-		cons = append(cons, con)
-
-		newJob = v12.Job{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      DefaultEcrCredentialClearJobName + fmt.Sprintf(time.Now().Format("200601021504")),
-				Namespace: DefaultEcrCredentialNamespace,
-			},
-			Spec: v12.JobSpec{
-				BackoffLimit: backoffLimit,
-				Template: corev1.PodTemplateSpec{
-
-					ObjectMeta: v1.ObjectMeta{
-						Name:   DefaultEcrCredentialClearJobName,
-						Labels: lables,
-					},
-					Spec: corev1.PodSpec{
-						ServiceAccountName: DefaultEcrCredentialServiceAccountName,
-						RestartPolicy:      "OnFailure",
-						Containers:         cons,
-					},
-				},
-			},
-		}
-		return newJob, nil
-	default:
-		return newJob, errors.New("job type error ")
-	}
-}
-
 func GenUserCreateRequest(user ecrUser, dbAuth []DbAuth) ecrUser {
 	marshal, _ := json.Marshal(dbAuth)
 
@@ -928,11 +601,11 @@ func GenUserCreateRequest(user ecrUser, dbAuth []DbAuth) ecrUser {
 	}
 
 }
-func GenUserUpdateRequest(username string, dbAuth []DbAuth) ecrUser {
+func GenUserUpdateRequest(user ecrUser, dbAuth []DbAuth) ecrUser {
 	marshal, _ := json.Marshal(dbAuth)
 
 	return ecrUser{
-		User: User{Username: username},
+		User: User{Username: user.Username, Passwd: user.Passwd},
 		Auth: string(marshal),
 	}
 }

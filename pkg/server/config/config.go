@@ -178,9 +178,6 @@ func (conf *Config) stripEmptyOptions() {
 	if conf.MonitoringOptions != nil && conf.MonitoringOptions.Endpoint == "" {
 		conf.MonitoringOptions = nil
 	}
-	if conf.EcrCredentialOptions != nil && conf.EcrCredentialOptions.ApiGateway == "" {
-		conf.EcrCredentialOptions = nil
-	}
 
 }
 
