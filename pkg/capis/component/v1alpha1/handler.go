@@ -17,14 +17,16 @@ import (
 
 type Handler struct {
 	clusterclient.ClusterClients
-	Options *helm.Options
+	HelmOptions          *helm.Options
+	EcrCredentialOptions *tools.EcrCredentialOptions
 }
 
 func NewHandler(factory informers.CapInformerFactory, config *config.Config) Handler {
 	clients := clusterclient.NewClusterClients(factory.CaptainSharedInformerFactory().Cluster().V1alpha1().Clusters(), config.MultiClusterOptions)
 	return Handler{
-		ClusterClients: clients,
-		Options:        config.ComponentOptions,
+		ClusterClients:       clients,
+		HelmOptions:          config.ComponentOptions,
+		EcrCredentialOptions: config.EcrCredentialOptions,
 	}
 }
 
@@ -132,7 +134,7 @@ func (h Handler) NewComponentTool(regionName, clusterName string, clusterCompone
 		return nil, err
 	}
 	kubeConfig := cluster.Spec.Connection.KubeConfig
-	client, err := helm.NewClient(kubeConfig, clusterComponent.Namespace, h.Options)
+	client, err := helm.NewClient(kubeConfig, clusterComponent.Namespace, h.HelmOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +149,7 @@ func (h Handler) NewComponentTool(regionName, clusterName string, clusterCompone
 	case "prometheus":
 		return tools.NewPrometheus(client, kubeClient, clusterComponent)
 	case "ecrCredential":
-		return tools.NewEcrCredential(client, kubeClient, clusterComponent)
+		return tools.NewEcrCredential(h.EcrCredentialOptions, client, kubeClient, clusterComponent)
 		// TOTO ADD MORE Component
 	default:
 		return tools.NewDefaultTool(client, clusterComponent)

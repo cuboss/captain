@@ -3,7 +3,6 @@ package tools
 import (
 	"bytes"
 	model "captain/pkg/models/component"
-	"captain/pkg/server/config"
 	"captain/pkg/simple/client/helm"
 	"captain/pkg/simple/server/errors"
 	"context"
@@ -75,6 +74,7 @@ func NewEcrCredentialOptions() *EcrCredentialOptions {
 }
 
 type EcrCredential struct {
+	options          *EcrCredentialOptions
 	client           *helm.Client
 	clusterComponent *model.ClusterComponent
 	kubeClient       *kubernetes.Clientset
@@ -120,8 +120,9 @@ type DbAuthInfo struct {
 	Projects []string `json:"projects"`
 }
 
-func NewEcrCredential(client *helm.Client, kubeClient *kubernetes.Clientset, clusterComponent *model.ClusterComponent) (*EcrCredential, error) {
+func NewEcrCredential(options *EcrCredentialOptions, client *helm.Client, kubeClient *kubernetes.Clientset, clusterComponent *model.ClusterComponent) (*EcrCredential, error) {
 	ec := &EcrCredential{
+		options:          options,
 		client:           client,
 		kubeClient:       kubeClient,
 		clusterComponent: clusterComponent,
@@ -151,10 +152,7 @@ func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[s
 	values := map[string]interface{}{}
 	configMap := map[string]interface{}{}
 	secret := map[string]interface{}{}
-	opts, err := getEcrOpts()
-	if err != nil {
-		return nil, err
-	}
+	opts := p.options
 	//灵活控制helm values的仓库值 单云池唯一
 
 	var defaultImageRegistry string
@@ -178,7 +176,7 @@ func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[s
 	values["resources.requests.memory"] = "256Mi"
 	values["service.type"] = "ClusterIP"
 
-	values, err = MergeValueMap(values)
+	values, err := MergeValueMap(values)
 	if err != nil {
 		return nil, err
 	}
@@ -328,10 +326,7 @@ func (p *EcrCredential) deleteEcrUser() error {
 	} else {
 		user.Username = string(get.Data["user-name"])
 	}
-	opts, err := getEcrOpts()
-	if err != nil {
-		return err
-	}
+	opts := p.options
 
 	url := genUrl(opts.ApiGateway, deleteEcrUserUri)
 	httpClient := newHttpClient(url, opts.AccessKey, opts.SecretKey)
@@ -352,16 +347,13 @@ func (p *EcrCredential) deleteEcrUser() error {
 func (p *EcrCredential) createOrUpdateEcrUser(secretList []DbAuth, isinstall bool) (ecrUser, error) {
 	var url string
 	var user ecrUser
-	opts, err := getEcrOpts()
-	if err != nil {
-		return ecrUser{}, err
-	}
+	opts := p.options
 	if isinstall {
 		url = genUrl(opts.ApiGateway, createEcrUserUri)
 		user = GenUser(p.clusterComponent.CkeClusterId, true)
 		httpClient := newHttpClient(url, opts.AccessKey, opts.SecretKey)
 		createRequest := GenUserCreateRequest(user, secretList)
-		_, err = httpClient.Partner().WithRawBody(createRequest).Post()
+		_, err := httpClient.Partner().WithRawBody(createRequest).Post()
 		if err != nil {
 			//重复创建 仍然为200
 			return user, errors.New(fmt.Sprintf("init ecr user error %v", err))
@@ -431,18 +423,6 @@ func GenUser(clusterid string, updatePasswd bool) ecrUser {
 
 	}
 	return newUser
-}
-
-func getEcrOpts() (*EcrCredentialOptions, error) {
-	//getApiGateWay  readConfig
-	config, err := config.TryLoadFromDisk()
-	if err != nil {
-		klog.Infof("Failed to load configuration from disk", err)
-		return nil, err
-	} else {
-
-		return config.EcrCredentialOptions, err
-	}
 }
 
 func gen20UserName(clusterId string) string {
