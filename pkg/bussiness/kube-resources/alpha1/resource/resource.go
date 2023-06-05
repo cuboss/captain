@@ -65,6 +65,7 @@ var (
 	ResourceQuotaGVR                  = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "resourcequotas"}
 	LimitRangeGVR                     = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "limitranges"}
 	HorizontalPodAutoscalerV2beta2GVR = schema.GroupVersionResource{Group: "autoscaling", Version: "v2beta2", Resource: "horizontalpodautoscalersv2beta2"}
+	HorizontalPodAutoscalerV2         = schema.GroupVersionResource{Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalersv2"}
 	ErrResourceNotSupported           = errors.New("resource is not supported")
 )
 
@@ -96,6 +97,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	namespacedResourceProcessors[CronJobBatchV1beta1GVR] = cronjob.NewBatchV1beta1(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[DaemonsetGVR] = daemonset.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[HorizontalPodAutoscalerV2beta2GVR] = horizontalpodautoscaler.NewV2beta2HpaProvider(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[HorizontalPodAutoscalerV2] = horizontalpodautoscaler.NewV2beta2HpaProvider(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[IngresseGVR] = ingress.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[IngresseV1beta1GVR] = ingress.NewV1beta1IngressProvider(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[ServiceGVR] = service.New(factory.KubernetesSharedInformerFactory())
@@ -127,6 +129,7 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	multiClusterResourceProcessors[CronJobBatchV1beta1GVR] = cronjob.NewMCBatchV1beta1ResProvider(clients)
 	multiClusterResourceProcessors[DaemonsetGVR] = daemonset.NewMCResProvider(clients)
 	multiClusterResourceProcessors[HorizontalPodAutoscalerV2beta2GVR] = horizontalpodautoscaler.NewMCV2beta2HpaProvider(clients)
+	multiClusterResourceProcessors[HorizontalPodAutoscalerV2] = horizontalpodautoscaler.NewMCV2beta2HpaProvider(clients)
 	multiClusterResourceProcessors[IngresseGVR] = ingress.NewMCResProvider(clients)
 	multiClusterResourceProcessors[IngresseV1beta1GVR] = ingress.NewMCV1beta1ResProvider(clients)
 	multiClusterResourceProcessors[ServiceGVR] = service.NewMCResProvider(clients)
