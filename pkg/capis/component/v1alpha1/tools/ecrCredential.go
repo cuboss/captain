@@ -234,7 +234,7 @@ func (p *EcrCredential) Install() (*release.Release, error) {
 		return nil, err
 	}
 
-	if err = waitForRunning(p.clusterComponent.Namespace, DefaultEcrCredentialDeploymentName, 1, p.kubeClient); err != nil {
+	if err = waitForRunning(DefaultEcrCredentialNamespace, DefaultEcrCredentialDeploymentName, 1, p.kubeClient); err != nil {
 		return nil, err
 	}
 
@@ -270,7 +270,7 @@ func (p *EcrCredential) Uninstall() (*release.UninstallReleaseResponse, error) {
 	}
 
 	//clusterRole clusterRoleBinding serviceAccount helm卸载的时候 自动删除
-	return uninstall(p.client, p.kubeClient, p.release, DefaultEcrCredentialIngressName, p.clusterComponent.Namespace)
+	return uninstall(p.client, p.kubeClient, p.release, DefaultEcrCredentialIngressName, DefaultEcrCredentialNamespace)
 
 }
 
