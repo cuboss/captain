@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -65,6 +66,7 @@ type EcrCredentialOptions struct {
 	SecretKey           string `json:"secretKey" yaml:"secretKey"`
 	ValuesImageRegistry string `json:"valuesImageRegistry" yaml:"valuesImageRegistry"`
 	ValuesTag           string `json:"valuesTag" yaml:"valuesTag"`
+	ValuesArchitecture  string `json:"valuesArchitecture" yaml:"valuesArchitecture"`
 }
 
 func NewEcrCredentialOptions() *EcrCredentialOptions {
@@ -153,6 +155,12 @@ func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[s
 	configMap := map[string]interface{}{}
 	secret := map[string]interface{}{}
 	opts := p.options
+	//增加校验 校验
+	err2 := checkOptions(opts)
+	if err2 != nil {
+		return nil, err2
+	}
+
 	//灵活控制helm values的仓库值 单云池唯一
 
 	var defaultImageRegistry string
@@ -163,6 +171,7 @@ func (p *EcrCredential) valuse010Binding(config configInfo, user ecrUser) (map[s
 		defaultImageRegistry = opts.ValuesImageRegistry
 	}
 	values["defaultImageRegistry"] = defaultImageRegistry
+	values["architecture"] = opts.ValuesArchitecture
 	//如果需要调整镜像版本 修改漏洞的话 修改tag
 	values["image.tag"] = opts.ValuesTag
 	values["initJob.initJobImage.tag"] = opts.ValuesTag
@@ -225,7 +234,7 @@ func (p *EcrCredential) Install() (*release.Release, error) {
 		return nil, err
 	}
 
-	if err = waitForRunning(p.clusterComponent.Namespace, DefaultEcrCredentialDeploymentName, 1, p.kubeClient); err != nil {
+	if err = waitForRunning(DefaultEcrCredentialNamespace, DefaultEcrCredentialDeploymentName, 1, p.kubeClient); err != nil {
 		return nil, err
 	}
 
@@ -261,7 +270,7 @@ func (p *EcrCredential) Uninstall() (*release.UninstallReleaseResponse, error) {
 	}
 
 	//clusterRole clusterRoleBinding serviceAccount helm卸载的时候 自动删除
-	return uninstall(p.client, p.kubeClient, p.release, DefaultEcrCredentialIngressName, p.clusterComponent.Namespace)
+	return uninstall(p.client, p.kubeClient, p.release, DefaultEcrCredentialIngressName, DefaultEcrCredentialNamespace)
 
 }
 
@@ -327,6 +336,10 @@ func (p *EcrCredential) deleteEcrUser() error {
 		user.Username = string(get.Data["user-name"])
 	}
 	opts := p.options
+	err2 := checkOptions(opts)
+	if err2 != nil {
+		return err2
+	}
 
 	url := genUrl(opts.ApiGateway, deleteEcrUserUri)
 	httpClient := newHttpClient(url, opts.AccessKey, opts.SecretKey)
@@ -348,6 +361,11 @@ func (p *EcrCredential) createOrUpdateEcrUser(secretList []DbAuth, isinstall boo
 	var url string
 	var user ecrUser
 	opts := p.options
+	err2 := checkOptions(opts)
+	if err2 != nil {
+		return ecrUser{}, err2
+	}
+
 	if isinstall {
 		url = genUrl(opts.ApiGateway, createEcrUserUri)
 		user = GenUser(p.clusterComponent.CkeClusterId, true)
@@ -593,4 +611,19 @@ func GenUserUpdateRequest(user ecrUser, dbAuth []DbAuth) ecrUser {
 // GenUserDeleteRequest 预留
 func GenUserDeleteRequest(user ecrUser) ecrUser {
 	return user
+}
+
+func checkOptions(opts *EcrCredentialOptions) error {
+	if opts.ApiGateway == "" {
+		return errors.New("ecr apiGateway is empty")
+	} else {
+		//tcp ping  ecr apiGateway
+		conect, err := net.DialTimeout("tcp", opts.ApiGateway, 5*time.Second)
+		if err != nil {
+			klog.Infof("tcp ping ecr apiGateway", err)
+			return errors.New(fmt.Sprintf("tcp ping addr %s failed: %v", opts.ApiGateway, err))
+		}
+		defer conect.Close()
+	}
+	return nil
 }

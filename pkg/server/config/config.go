@@ -114,7 +114,7 @@ type Config struct {
 	MultiClusterOptions  *multicluster.Options       `json:"multicluster,omitempty" yaml:"multicluster,omitempty" mapstructure:"multicluster"`
 	MonitoringOptions    *prometheus.Options         `json:"monitoring,omitempty" yaml:"monitoring,omitempty" mapstructure:"monitoring"`
 	ComponentOptions     *helm.Options               `json:"component,omitempty" yaml:"component,omitempty" mapstructure:"component"`
-	EcrCredentialOptions *tools.EcrCredentialOptions `json:"ecrCredentialOptions,omitempty" yaml:"ecrCredentialOptions,omitempty" mapstructure:"ecrCredentialOptions"`
+	EcrCredentialOptions *tools.EcrCredentialOptions `json:"ecrHelper,omitempty" yaml:"ecrHelper,omitempty" mapstructure:"ecrHelper"`
 }
 
 // newConfig creates a default non-empty Config
