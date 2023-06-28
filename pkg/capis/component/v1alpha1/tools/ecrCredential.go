@@ -620,7 +620,7 @@ func checkOptions(opts *EcrCredentialOptions) error {
 		//tcp ping  ecr apiGateway
 		conect, err := net.DialTimeout("tcp", opts.ApiGateway, 5*time.Second)
 		if err != nil {
-			klog.Infof("tcp ping ecr apiGateway", err)
+			klog.Infof("tcp ping ecr apiGateway error %v", err)
 			return errors.New(fmt.Sprintf("tcp ping addr %s failed: %v", opts.ApiGateway, err))
 		}
 		defer conect.Close()
