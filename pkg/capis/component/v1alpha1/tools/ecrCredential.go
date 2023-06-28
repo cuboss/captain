@@ -336,6 +336,10 @@ func (p *EcrCredential) deleteEcrUser() error {
 		user.Username = string(get.Data["user-name"])
 	}
 	opts := p.options
+	err2 := checkOptions(opts)
+	if err2 != nil {
+		return err2
+	}
 
 	url := genUrl(opts.ApiGateway, deleteEcrUserUri)
 	httpClient := newHttpClient(url, opts.AccessKey, opts.SecretKey)
