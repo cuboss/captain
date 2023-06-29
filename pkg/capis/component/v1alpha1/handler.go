@@ -148,7 +148,7 @@ func (h Handler) NewComponentTool(regionName, clusterName string, clusterCompone
 	switch clusterComponent.ComponentName {
 	case "prometheus":
 		return tools.NewPrometheus(client, kubeClient, clusterComponent)
-	case "ecrCredential":
+	case "ecr-helper":
 		return tools.NewEcrCredential(h.EcrCredentialOptions, client, kubeClient, clusterComponent)
 		// TOTO ADD MORE Component
 	default:
