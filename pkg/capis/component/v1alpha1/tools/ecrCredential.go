@@ -19,6 +19,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -283,15 +284,27 @@ func (p *EcrCredential) Status(release string) ([]model.ClusterComponentResStatu
 // setCredentialCm 处理前端传入的值
 func (p *EcrCredential) setCredentialCm(rg []string, install bool) (configInfo, error) {
 	i, ok := p.clusterComponent.Parameters["configmap"]
+	config := configInfo{}
+	//将unkkown map 转化为configInfo 借助json转换 直接struct转化存在问题
+	marshal, err := json.Marshal(i)
+	if err != nil {
+		return config, err
+	}
+	err = json.Unmarshal(marshal, &config)
+	if err != nil {
+		return config, err
+	}
+	if reflect.DeepEqual(config, configInfo{}) {
+		return config, errors.New("ecrCredential parameters auth is empty")
+	}
+
 	if ok {
-		config := i.(configInfo)
 		out, _ := yaml.Marshal(rg)
 		config.EcrRegistry = string(out)
 		return config, nil
 	} else {
 		return configInfo{}, errors.New("Parameters configmap error")
 	}
-
 }
 
 // SetRegistrySecret 处理前端传入的值
@@ -299,13 +312,28 @@ func (p *EcrCredential) setEcrUser(isInstall bool) (ecrUser, []string, error) {
 	//install 和update时 用到
 	//全量更新 后续可优化
 	rg := []string{}
+	authList := []DbAuth{}
 	i, ok := p.clusterComponent.Parameters["auth"]
+	//将unkkown map 转化为[]dbAuth 借助json转换 直接struct转化存在问题
+	marshal, err := json.Marshal(i)
+	if err != nil {
+		return ecrUser{}, rg, err
+	}
+	err = json.Unmarshal(marshal, &authList)
+	if err != nil {
+		return ecrUser{}, rg, err
+	}
+	if len(authList) == 0 {
+		return ecrUser{}, rg, errors.New("ecrCredential parameters auth is empty")
+
+	}
 	if ok {
-		user, err := p.createOrUpdateEcrUser(i.([]DbAuth), isInstall)
+
+		user, err := p.createOrUpdateEcrUser(authList, isInstall)
 		if err != nil {
 			return ecrUser{}, rg, err
 		}
-		for _, v := range i.([]DbAuth) {
+		for _, v := range authList {
 			rg = append(rg, v.HarborServer)
 		}
 		return user, rg, err
