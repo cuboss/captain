@@ -645,8 +645,15 @@ func checkOptions(opts *EcrCredentialOptions) error {
 	if opts.ApiGateway == "" {
 		return errors.New("ecr apiGateway is empty")
 	} else {
+
+		url, err := url.Parse(opts.ApiGateway)
+		if err != nil {
+			klog.Infof("tcp ping ecr apiGateway error ,url is illegal ", err)
+			return errors.New(fmt.Sprintf("tcp ping addr %s error,url is illegal: %v", opts.ApiGateway, err))
+		}
+
 		//tcp ping  ecr apiGateway
-		conect, err := net.DialTimeout("tcp", opts.ApiGateway, 5*time.Second)
+		conect, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", url.Hostname(), url.Port()), 5*time.Second)
 		if err != nil {
 			klog.Infof("tcp ping ecr apiGateway", err)
 			return errors.New(fmt.Sprintf("tcp ping addr %s failed: %v", opts.ApiGateway, err))
