@@ -180,6 +180,7 @@ func uninstall(client *helm.Client, kubeClient *kubernetes.Clientset, releaseNam
 		return nil, err
 	}
 	for _, r := range rs {
+		klog.V(0).Infof("uninstall list release find: %s", r.Name)
 		if r.Name == releaseName {
 			rel, err := client.Uninstall(releaseName)
 			if err != nil {

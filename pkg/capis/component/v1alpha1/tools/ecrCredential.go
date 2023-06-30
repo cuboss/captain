@@ -270,7 +270,7 @@ func (p *EcrCredential) Uninstall() (*release.UninstallReleaseResponse, error) {
 	}
 
 	//clusterRole clusterRoleBinding serviceAccount helm卸载的时候 自动删除
-	return uninstall(p.client, p.kubeClient, p.release, DefaultEcrCredentialIngressName, DefaultEcrCredentialNamespace)
+	return uninstall(p.client, p.kubeClient, p.release, "", "")
 
 }
 
