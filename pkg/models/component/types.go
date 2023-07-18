@@ -8,6 +8,7 @@ type ComponentBase struct {
 	Type             string `json:"type"` // system or optional
 	ComponentId      string `json:"component_id"`
 	ComponentName    string `json:"component_name"`
+	DisplayName      string `json:"display_name"`
 	ComponentVersion string `json:"component_version"`
 	ChartName        string `json:"chart_name"`
 	ChartVersion     string `json:"chart_version"`

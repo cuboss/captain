@@ -8,6 +8,7 @@ import (
 	"captain/pkg/bussiness/kube-resources/alpha1/cronjob"
 	"captain/pkg/bussiness/kube-resources/alpha1/daemonset"
 	"captain/pkg/bussiness/kube-resources/alpha1/deployment"
+	"captain/pkg/bussiness/kube-resources/alpha1/horizontalpodautoscaler"
 	"captain/pkg/bussiness/kube-resources/alpha1/ingress"
 	"captain/pkg/bussiness/kube-resources/alpha1/job"
 	"captain/pkg/bussiness/kube-resources/alpha1/limitrange"
@@ -38,32 +39,34 @@ import (
 )
 
 var (
-	NamespaceGVR             = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
-	NodeGVR                  = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "nodes"}
-	ClusterroleGVR           = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles"}
-	StorageclassGVR          = schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}
-	PersistentvolumeGVR      = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumes"}
-	DeploymentGVR            = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
-	StatefulsetGVR           = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
-	PodGVR                   = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
-	JobGVR                   = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "jobs"}
-	CronJobGVR               = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "cronjobs"}
-	CronJobBatchV1beta1GVR   = schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobsv1beta1"}
-	DaemonsetGVR             = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}
-	IngresseGVR              = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}
-	IngresseV1beta1GVR       = schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "ingressesv1beta1"}
-	ServiceGVR               = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
-	ConfigmapGVR             = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
-	PersistentvolumeClaimGVR = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}
-	SecretGVR                = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	ServiceaccountGVR        = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
-	RoleGVR                  = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"}
-	ClusterrolebindingGVR    = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"}
-	RolebindingGVR           = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"}
-	NetworkpolicieGVR        = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies"}
-	ResourceQuotaGVR         = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "resourcequotas"}
-	LimitRangeGVR            = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "limitranges"}
-	ErrResourceNotSupported  = errors.New("resource is not supported")
+	NamespaceGVR                      = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+	NodeGVR                           = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "nodes"}
+	ClusterroleGVR                    = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles"}
+	StorageclassGVR                   = schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}
+	PersistentvolumeGVR               = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumes"}
+	DeploymentGVR                     = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	StatefulsetGVR                    = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
+	PodGVR                            = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
+	JobGVR                            = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "jobs"}
+	CronJobGVR                        = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "cronjobs"}
+	CronJobBatchV1beta1GVR            = schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobsv1beta1"}
+	DaemonsetGVR                      = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}
+	IngresseGVR                       = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}
+	IngresseV1beta1GVR                = schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "ingressesv1beta1"}
+	ServiceGVR                        = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
+	ConfigmapGVR                      = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
+	PersistentvolumeClaimGVR          = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}
+	SecretGVR                         = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
+	ServiceaccountGVR                 = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
+	RoleGVR                           = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"}
+	ClusterrolebindingGVR             = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"}
+	RolebindingGVR                    = schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"}
+	NetworkpolicieGVR                 = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies"}
+	ResourceQuotaGVR                  = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "resourcequotas"}
+	LimitRangeGVR                     = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "limitranges"}
+	HorizontalPodAutoscalerV2beta2GVR = schema.GroupVersionResource{Group: "autoscaling", Version: "v2beta2", Resource: "horizontalpodautoscalersv2beta2"}
+	HorizontalPodAutoscalerV2         = schema.GroupVersionResource{Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalersv2"}
+	ErrResourceNotSupported           = errors.New("resource is not supported")
 )
 
 // ResourceProcessor ... processing resources including kube-native, sevice mesh , others kinds of cloud-native resources
@@ -93,6 +96,8 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	namespacedResourceProcessors[CronJobGVR] = cronjob.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[CronJobBatchV1beta1GVR] = cronjob.NewBatchV1beta1(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[DaemonsetGVR] = daemonset.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[HorizontalPodAutoscalerV2beta2GVR] = horizontalpodautoscaler.NewV2beta2HpaProvider(factory.KubernetesSharedInformerFactory())
+	namespacedResourceProcessors[HorizontalPodAutoscalerV2] = horizontalpodautoscaler.NewV2beta2HpaProvider(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[IngresseGVR] = ingress.New(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[IngresseV1beta1GVR] = ingress.NewV1beta1IngressProvider(factory.KubernetesSharedInformerFactory())
 	namespacedResourceProcessors[ServiceGVR] = service.New(factory.KubernetesSharedInformerFactory())
@@ -123,6 +128,8 @@ func NewResourceProcessor(factory informers.CapInformerFactory, cache cache.Cach
 	multiClusterResourceProcessors[CronJobGVR] = cronjob.NewMCResProvider(clients)
 	multiClusterResourceProcessors[CronJobBatchV1beta1GVR] = cronjob.NewMCBatchV1beta1ResProvider(clients)
 	multiClusterResourceProcessors[DaemonsetGVR] = daemonset.NewMCResProvider(clients)
+	multiClusterResourceProcessors[HorizontalPodAutoscalerV2beta2GVR] = horizontalpodautoscaler.NewMCV2beta2HpaProvider(clients)
+	multiClusterResourceProcessors[HorizontalPodAutoscalerV2] = horizontalpodautoscaler.NewMCV2beta2HpaProvider(clients)
 	multiClusterResourceProcessors[IngresseGVR] = ingress.NewMCResProvider(clients)
 	multiClusterResourceProcessors[IngresseV1beta1GVR] = ingress.NewMCV1beta1ResProvider(clients)
 	multiClusterResourceProcessors[ServiceGVR] = service.NewMCResProvider(clients)

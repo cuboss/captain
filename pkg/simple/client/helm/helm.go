@@ -112,6 +112,7 @@ func (c Client) Uninstall(releaseName string) (*release.UninstallReleaseResponse
 
 func (c Client) List() ([]*release.Release, error) {
 	client := action.NewList(c.actionConfig)
+	client.All = true
 	release, err := client.Run()
 	if err != nil {
 		return release, fmt.Errorf("list chart failed: %v", err)
