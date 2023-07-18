@@ -648,7 +648,7 @@ func checkOptions(opts *EcrCredentialOptions) error {
 
 		url, err := url.Parse(opts.ApiGateway)
 		if err != nil {
-			klog.Infof("tcp ping ecr apiGateway error ,url is illegal ", err)
+			klog.Infof("tcp ping ecr apiGateway error: %v, url is illegal ", err)
 			return errors.New(fmt.Sprintf("tcp ping addr %s error,url is illegal: %v", opts.ApiGateway, err))
 		}
 
